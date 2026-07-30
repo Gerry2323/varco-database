@@ -718,3 +718,251 @@ footer p {
         transform: none;
     }
 }
+
+
+/* =========================================================
+   NEW EXPANDABLE FORM SECTIONS
+   These additions preserve the website's original appearance.
+   ========================================================= */
+
+.required-fields-note {
+    margin: 4px 0 0;
+    color: var(--dark-gray);
+    font-size: 13px;
+}
+
+.required-fields-note span,
+.required-mark {
+    color: var(--danger);
+    font-weight: bold;
+}
+
+.form-section {
+    margin-top: 16px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 6px;
+    background-color: var(--white);
+    overflow: hidden;
+}
+
+.form-section[open] {
+    border-color: #b8c8d8;
+}
+
+.form-section summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background-color: var(--light-gray);
+    color: var(--navy);
+    font-weight: bold;
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+.form-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.form-section summary::before {
+    content: "▶";
+    flex-shrink: 0;
+    color: var(--light-blue);
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.form-section[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.form-section summary:hover {
+    background-color: #eaf5fb;
+}
+
+.form-section summary:focus-visible {
+    outline: 3px solid rgba(54, 169, 225, 0.22);
+    outline-offset: -3px;
+}
+
+.form-section[open] summary {
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.section-status {
+    margin-left: auto;
+    padding: 3px 9px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 20px;
+    background-color: var(--white);
+    color: var(--dark-gray);
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.form-section .form-grid {
+    padding: 20px 16px;
+}
+
+
+/* Text areas use the same style as the original inputs */
+.form-group textarea {
+    width: 100%;
+    min-height: 92px;
+    padding: 11px 12px;
+    border: 1px solid #aeb8c6;
+    border-radius: 5px;
+    background-color: var(--white);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.form-group textarea:focus {
+    border-color: var(--light-blue);
+    outline: 3px solid rgba(54, 169, 225, 0.18);
+}
+
+.form-group input:disabled {
+    background-color: #e9edf2;
+    color: var(--dark-gray);
+    cursor: not-allowed;
+}
+
+
+/* Required fields keep the original input style */
+.form-group input:required,
+.form-group select:required {
+    border-left: 4px solid var(--light-blue);
+}
+
+
+/* Repeatable text entries */
+.repeatable-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.repeatable-entry input {
+    min-width: 0;
+}
+
+.add-entry-button {
+    min-width: 78px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--blue);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.add-entry-button:hover,
+.add-entry-button:focus {
+    background-color: var(--navy);
+    outline: none;
+}
+
+
+/* Support tag classes used by the JavaScript form */
+.selected-method,
+.selection-tag,
+.entry-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    padding: 6px 8px 6px 11px;
+    border: 1px solid #9fcfe5;
+    border-radius: 20px;
+    background-color: var(--white);
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.selection-tag button,
+.entry-tag button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: #d8edf7;
+    color: var(--navy);
+    font-size: 17px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.selection-tag button:hover,
+.selection-tag button:focus,
+.entry-tag button:hover,
+.entry-tag button:focus {
+    background-color: var(--danger);
+    color: var(--white);
+    outline: none;
+}
+
+
+/* =========================================================
+   RESPONSIVE ADDITIONS FOR THE EXPANDED FORM
+   ========================================================= */
+
+@media (max-width: 700px) {
+    .form-section summary {
+        align-items: flex-start;
+        padding: 13px 12px;
+    }
+
+    .form-section .form-grid {
+        padding: 17px 12px;
+    }
+
+    .section-status {
+        font-size: 10px;
+    }
+
+    .repeatable-entry {
+        grid-template-columns: 1fr;
+    }
+
+    .add-entry-button {
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   REDUCED-MOTION ACCESSIBILITY
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

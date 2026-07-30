@@ -1,206 +1,187 @@
 /* =========================================================
    VARCO MATERIALS DATABASE
-   Recent materials, Edit/Delete, dates, and document links
+   JavaScript for the expandable material form
    ========================================================= */
+
+"use strict";
 
 
 /* =========================================================
-   GET THE HTML ELEMENTS
+   PAGE ELEMENTS
    ========================================================= */
 
-const addMaterialButton = document.getElementById(
-    "add-material-button"
-);
+const addMaterialButton =
+    document.getElementById("add-material-button");
 
-const materialForm = document.getElementById(
-    "material-form"
-);
+const materialForm =
+    document.getElementById("material-form");
 
-const materialFormTitle = document.getElementById(
-    "material-form-title"
-);
+const materialFormTitle =
+    document.getElementById("material-form-title");
 
-const saveMaterialButton = document.getElementById(
-    "save-material-button"
-);
+const closeFormButton =
+    document.getElementById("close-form-button");
 
-const closeFormButton = document.getElementById(
-    "close-form-button"
-);
+const cancelButton =
+    document.getElementById("cancel-button");
 
-const cancelButton = document.getElementById(
-    "cancel-button"
-);
+const saveMaterialButton =
+    document.getElementById("save-material-button");
 
-const materialNameInput = document.getElementById(
-    "material-name"
-);
+const materialSearchInput =
+    document.getElementById("material-search");
 
-const materialCategoryInput = document.getElementById(
-    "material-category"
-);
+const materialsTableBody =
+    document.getElementById("materials-table-body");
 
-const materialCompositionInput = document.getElementById(
-    "material-composition"
-);
+const materialCount =
+    document.getElementById("material-count");
 
-const manufacturingMethodSelect = document.getElementById(
-    "material-manufacturing-method"
-);
+const categoryCount =
+    document.getElementById("category-count");
 
-const selectedMethodsContainer = document.getElementById(
-    "selected-manufacturing-methods"
-);
+const recordCount =
+    document.getElementById("record-count");
 
-const manufacturingMethodError = document.getElementById(
-    "manufacturing-method-error"
-);
+const manufacturingMethodError =
+    document.getElementById("manufacturing-method-error");
 
-const materialMeltingPointInput = document.getElementById(
-    "material-melting-point"
-);
 
-const materialSourceInput = document.getElementById(
-    "material-source"
-);
+/* =========================================================
+   REGULAR FORM FIELDS
+   Left side = saved database property
+   Right side = matching HTML element ID
+   ========================================================= */
 
-const materialDocumentLinkInput = document.getElementById(
-    "material-document-link"
-);
+const fieldMap = {
+    name: "material-name",
+    category: "material-category",
+    feedstockForm: "material-feedstock-form",
+    composition: "material-composition",
+    compositionBasis: "material-composition-basis",
 
-const materialsTableBody = document.getElementById(
-    "materials-table-body"
-);
+    particleSizeMin: "particle-size-min",
+    particleSizeMax: "particle-size-max",
+    particleSizeAverage: "particle-size-average",
+    particleSizeMethod: "particle-size-method",
+    powderFlowability: "powder-flowability",
+    apparentDensity: "apparent-density",
+    purity: "material-purity",
 
-const materialCount = document.getElementById(
-    "material-count"
-);
+    supplier: "material-supplier",
+    productName: "product-name",
+    productNumber: "product-number",
 
-const categoryCount = document.getElementById(
-    "category-count"
-);
+    density: "material-density",
+    porosity: "material-porosity",
+    hardnessValue: "hardness-value",
+    hardnessScaleLoad: "hardness-scale-load",
+    youngsModulus: "youngs-modulus",
+    poissonsRatio: "poissons-ratio",
+    tensileStrength: "tensile-strength",
+    fractureToughness: "fracture-toughness",
 
-const recordCount = document.getElementById(
-    "record-count"
-);
+    meltingPoint: "material-melting-point",
+    maximumServiceTemperature:
+        "maximum-service-temperature",
+    thermalConductivity: "thermal-conductivity",
+    thermalExpansion: "thermal-expansion",
+    electricalProperty: "electrical-property",
+
+    corrosionResistance: "corrosion-resistance",
+    oxidationResistance: "oxidation-resistance",
+
+    reportedAdvantages: "reported-advantages",
+    reportedLimitations: "reported-limitations",
+
+    sourceType: "material-source",
+    sourceTitle: "source-title",
+    sourceAuthor: "source-author",
+    publicationYear: "publication-year",
+    sourceFilename: "source-filename",
+    sourcePage: "source-page",
+    tableFigureNumber: "table-figure-number",
+    doiUrl: "doi-url",
+    documentLink: "material-document-link",
+    dataQualityStatus: "data-quality-status",
+
+    notes: "material-notes"
+};
+
+
+/* =========================================================
+   MULTIPLE-SELECTION FIELDS
+   ========================================================= */
+
+const listDefinitions = {
+    manufacturingMethods: {
+        selectId: "material-manufacturing-method",
+        containerId: "selected-manufacturing-methods"
+    },
+
+    morphologies: {
+        selectId: "material-morphology",
+        containerId: "selected-morphologies"
+    },
+
+    sprayProcesses: {
+        selectId: "recommended-spray-process",
+        containerId: "selected-spray-processes"
+    },
+
+    wearMechanisms: {
+        selectId: "wear-mechanism",
+        containerId: "selected-wear-mechanisms"
+    },
+
+    intendedApplications: {
+        inputId: "intended-application-input",
+        buttonId: "add-intended-application",
+        containerId: "selected-intended-applications"
+    },
+
+    testStandards: {
+        inputId: "test-standard-input",
+        buttonId: "add-test-standard",
+        containerId: "selected-test-standards"
+    }
+};
 
 
 /* =========================================================
    DATABASE VARIABLES
    ========================================================= */
 
-/*
-   Stores every material saved in the browser.
-*/
 let materials = loadMaterials();
-
-/*
-   Stores the manufacturing methods selected in the form.
-*/
-let selectedManufacturingMethods = [];
-
-/*
-   Stores the ID of the material currently being edited.
-
-   A null value means the form is adding a new material.
-*/
 let editingMaterialId = null;
+let listValues = createEmptyListValues();
 
 
 /* =========================================================
-   LOAD SAVED MATERIALS
+   HELPER FUNCTIONS
    ========================================================= */
 
-function loadMaterials() {
-    const savedMaterials = localStorage.getItem(
-        "varcoMaterials"
-    );
+function createEmptyListValues() {
+    const emptyLists = {};
 
-    if (!savedMaterials) {
-        return [];
-    }
+    Object.keys(listDefinitions).forEach(function (key) {
+        emptyLists[key] = [];
+    });
 
-    try {
-        const parsedMaterials = JSON.parse(savedMaterials);
-
-        if (!Array.isArray(parsedMaterials)) {
-            return [];
-        }
-
-        /*
-           Used to give older records a date if they were saved
-           before the Date Added feature existed.
-        */
-        const migrationTime =
-            Date.now() - parsedMaterials.length * 1000;
-
-        return parsedMaterials.map(function (material, index) {
-            let methods = [];
-
-            /*
-               Convert older single-method records into the
-               newer multiple-method format.
-            */
-            if (Array.isArray(material.manufacturingMethods)) {
-                methods = material.manufacturingMethods;
-            } else if (material.manufacturingMethod) {
-                methods = [material.manufacturingMethod];
-            }
-
-            /*
-               Preserve an existing date. If an older material
-               has no date, assign one based on its saved order.
-            */
-            const dateAdded =
-                material.dateAdded ||
-                material.createdAt ||
-                new Date(
-                    migrationTime + index * 1000
-                ).toISOString();
-
-            return {
-                id: material.id || createMaterialId(),
-                name: material.name || "",
-                category: material.category || "",
-                composition: material.composition || "",
-                manufacturingMethods: methods,
-                meltingPoint: material.meltingPoint || "",
-                source: material.source || "",
-
-                documentLink:
-                    material.documentLink ||
-                    material.documentURL ||
-                    "",
-
-                dateAdded: dateAdded
-            };
-        });
-    } catch (error) {
-        console.error(
-            "The saved material data could not be loaded:",
-            error
-        );
-
-        return [];
-    }
+    return emptyLists;
 }
 
 
-/* =========================================================
-   SAVE MATERIALS
-   ========================================================= */
+function getField(recordKey) {
+    const fieldId = fieldMap[recordKey];
 
-function saveMaterials() {
-    localStorage.setItem(
-        "varcoMaterials",
-        JSON.stringify(materials)
-    );
+    if (!fieldId) {
+        return null;
+    }
+
+    return document.getElementById(fieldId);
 }
 
-
-/* =========================================================
-   CREATE A UNIQUE MATERIAL ID
-   ========================================================= */
 
 function createMaterialId() {
     if (
@@ -211,7 +192,7 @@ function createMaterialId() {
     }
 
     return (
-        Date.now().toString() +
+        Date.now() +
         "-" +
         Math.random().toString(16).slice(2)
     );
@@ -219,449 +200,582 @@ function createMaterialId() {
 
 
 /* =========================================================
-   OPEN AND CLOSE THE FORM
+   LOAD AND SAVE BROWSER DATA
    ========================================================= */
 
-/*
-   Opens an empty form for adding a new material.
-*/
-function openAddMaterialForm() {
-    resetMaterialForm();
+function loadMaterials() {
+    const savedMaterials =
+        localStorage.getItem("varcoMaterials");
 
-    editingMaterialId = null;
-
-    materialFormTitle.textContent =
-        "Add a New Material";
-
-    saveMaterialButton.textContent =
-        "Save Material";
-
-    materialForm.hidden = false;
-
-    addMaterialButton.setAttribute(
-        "aria-expanded",
-        "true"
-    );
-
-    materialNameInput.focus();
-}
-
-
-/*
-   Closes and resets the Add/Edit form.
-*/
-function closeMaterialForm() {
-    materialForm.hidden = true;
-
-    addMaterialButton.setAttribute(
-        "aria-expanded",
-        "false"
-    );
-
-    resetMaterialForm();
-}
-
-
-/*
-   Open the form when Add Material is selected.
-*/
-addMaterialButton.addEventListener(
-    "click",
-    openAddMaterialForm
-);
-
-
-/*
-   Close the form when the X button is selected.
-*/
-closeFormButton.addEventListener(
-    "click",
-    closeMaterialForm
-);
-
-
-/*
-   Close the form when Cancel is selected.
-*/
-cancelButton.addEventListener(
-    "click",
-    closeMaterialForm
-);
-
-
-/* =========================================================
-   MULTIPLE MANUFACTURING METHODS
-   ========================================================= */
-
-manufacturingMethodSelect.addEventListener(
-    "change",
-    function () {
-        const selectedMethod =
-            manufacturingMethodSelect.value.trim();
-
-        if (selectedMethod === "") {
-            return;
-        }
-
-        if (
-            !selectedManufacturingMethods.includes(
-                selectedMethod
-            )
-        ) {
-            selectedManufacturingMethods.push(
-                selectedMethod
-            );
-        }
-
-        /*
-           Return the dropdown to its blank option.
-        */
-        manufacturingMethodSelect.value = "";
-
-        manufacturingMethodError.hidden = true;
-
-        renderSelectedManufacturingMethods();
+    if (!savedMaterials) {
+        return [];
     }
-);
 
+    try {
+        const parsedMaterials =
+            JSON.parse(savedMaterials);
 
-/*
-   Display every selected manufacturing method as a tag.
-*/
-function renderSelectedManufacturingMethods() {
-    selectedMethodsContainer.replaceChildren();
-
-    selectedManufacturingMethods.forEach(
-        function (method) {
-            const methodTag =
-                document.createElement("span");
-
-            methodTag.className = "method-tag";
-
-            const methodName =
-                document.createElement("span");
-
-            methodName.textContent = method;
-
-            const removeButton =
-                document.createElement("button");
-
-            removeButton.type = "button";
-            removeButton.className =
-                "remove-method-button";
-
-            removeButton.textContent = "×";
-
-            removeButton.setAttribute(
-                "aria-label",
-                "Remove manufacturing method " + method
-            );
-
-            removeButton.addEventListener(
-                "click",
-                function () {
-                    removeManufacturingMethod(method);
-                }
-            );
-
-            methodTag.append(
-                methodName,
-                removeButton
-            );
-
-            selectedMethodsContainer.appendChild(
-                methodTag
-            );
+        if (!Array.isArray(parsedMaterials)) {
+            return [];
         }
-    );
-}
 
-
-/*
-   Remove one manufacturing method from the form.
-*/
-function removeManufacturingMethod(methodToRemove) {
-    selectedManufacturingMethods =
-        selectedManufacturingMethods.filter(
-            function (method) {
-                return method !== methodToRemove;
-            }
+        return parsedMaterials.map(normalizeMaterial);
+    } catch (error) {
+        console.error(
+            "VARCO materials could not be loaded:",
+            error
         );
 
-    renderSelectedManufacturingMethods();
+        return [];
+    }
+}
+
+
+function normalizeMaterial(material) {
+    const normalized = {
+        id: material.id || createMaterialId(),
+
+        dateAdded:
+            material.dateAdded ||
+            new Date().toISOString(),
+
+        dateUpdated:
+            material.dateUpdated ||
+            material.dateAdded ||
+            "",
+
+        ...material
+    };
+
+    /*
+       Compatibility with records created by
+       the older version of the website.
+    */
+
+    if (!normalized.sourceType && normalized.source) {
+        normalized.sourceType = normalized.source;
+    }
+
+    Object.keys(listDefinitions).forEach(function (key) {
+        if (!Array.isArray(normalized[key])) {
+            normalized[key] = [];
+        }
+    });
+
+    if (
+        normalized.manufacturingMethods.length === 0 &&
+        normalized.manufacturingMethod
+    ) {
+        normalized.manufacturingMethods = [
+            normalized.manufacturingMethod
+        ];
+    }
+
+    return normalized;
+}
+
+
+function saveMaterials() {
+    localStorage.setItem(
+        "varcoMaterials",
+        JSON.stringify(materials)
+    );
 }
 
 
 /* =========================================================
-   ADD OR UPDATE A MATERIAL
+   OPEN, CLOSE, AND RESET FORM
    ========================================================= */
 
-materialForm.addEventListener(
-    "submit",
-    function (event) {
-        /*
-           Prevent the webpage from refreshing.
-        */
-        event.preventDefault();
-
-        /*
-           Require at least one manufacturing method.
-        */
-        if (
-            selectedManufacturingMethods.length === 0
-        ) {
-            manufacturingMethodError.hidden = false;
-            manufacturingMethodSelect.focus();
-
-            return;
-        }
-
-        manufacturingMethodError.hidden = true;
-
-        /*
-           If an existing material is being edited, find it.
-        */
-        const existingMaterial = materials.find(
-            function (material) {
-                return material.id === editingMaterialId;
-            }
-        );
-
-        /*
-           Preserve the original Date Added while editing.
-           Create a new date only for a new material.
-        */
-        const dateAdded = existingMaterial
-            ? existingMaterial.dateAdded
-            : new Date().toISOString();
-
-        const materialRecord = {
-            id:
-                editingMaterialId ||
-                createMaterialId(),
-
-            name:
-                materialNameInput.value.trim(),
-
-            category:
-                materialCategoryInput.value,
-
-            composition:
-                materialCompositionInput.value.trim(),
-
-            manufacturingMethods: [
-                ...selectedManufacturingMethods
-            ],
-
-            meltingPoint:
-                materialMeltingPointInput.value.trim(),
-
-            source:
-                materialSourceInput.value.trim(),
-
-            documentLink:
-                materialDocumentLinkInput.value.trim(),
-
-            dateAdded: dateAdded
-        };
-
-        /*
-           Update an existing material or add a new one.
-        */
-        if (editingMaterialId) {
-            const materialIndex = materials.findIndex(
-                function (material) {
-                    return (
-                        material.id === editingMaterialId
-                    );
-                }
-            );
-
-            if (materialIndex !== -1) {
-                materials[materialIndex] =
-                    materialRecord;
-            }
-        } else {
-            materials.push(materialRecord);
-        }
-
-        saveMaterials();
-        renderMaterials();
-        updateDashboard();
-        closeMaterialForm();
-    }
-);
-
-
-/* =========================================================
-   EDIT A MATERIAL
-   ========================================================= */
-
-function editMaterial(materialId) {
-    const materialToEdit = materials.find(
-        function (material) {
-            return material.id === materialId;
-        }
-    );
-
-    if (!materialToEdit) {
+function openMaterialForm(materialToEdit = null) {
+    if (!materialForm) {
         return;
     }
 
-    closeAllActionMenus();
-
-    editingMaterialId = materialToEdit.id;
-
-    /*
-       Place the material's current information into the form.
-    */
-    materialNameInput.value =
-        materialToEdit.name;
-
-    materialCategoryInput.value =
-        materialToEdit.category;
-
-    materialCompositionInput.value =
-        materialToEdit.composition;
-
-    selectedManufacturingMethods = [
-        ...materialToEdit.manufacturingMethods
-    ];
-
-    materialMeltingPointInput.value =
-        materialToEdit.meltingPoint;
-
-    materialSourceInput.value =
-        materialToEdit.source;
-
-    materialDocumentLinkInput.value =
-        materialToEdit.documentLink;
-
-    manufacturingMethodError.hidden = true;
-
-    renderSelectedManufacturingMethods();
-
-    /*
-       Change the form title and Save button for Edit mode.
-    */
-    materialFormTitle.textContent =
-        "Edit Material";
-
-    saveMaterialButton.textContent =
-        "Update Material";
+    resetMaterialForm();
 
     materialForm.hidden = false;
 
-    addMaterialButton.setAttribute(
-        "aria-expanded",
-        "true"
-    );
+    if (addMaterialButton) {
+        addMaterialButton.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+    }
+
+    if (materialToEdit) {
+        editingMaterialId = materialToEdit.id;
+
+        if (materialFormTitle) {
+            materialFormTitle.textContent =
+                "Edit Material";
+        }
+
+        if (saveMaterialButton) {
+            saveMaterialButton.textContent =
+                "Save Changes";
+        }
+
+        fillMaterialForm(materialToEdit);
+    } else {
+        if (materialFormTitle) {
+            materialFormTitle.textContent =
+                "Add a New Material";
+        }
+
+        if (saveMaterialButton) {
+            saveMaterialButton.textContent =
+                "Save Material";
+        }
+    }
 
     materialForm.scrollIntoView({
         behavior: "smooth",
         block: "start"
     });
 
-    materialNameInput.focus();
+    const nameField = getField("name");
+
+    if (nameField) {
+        nameField.focus({
+            preventScroll: true
+        });
+    }
 }
 
 
-/* =========================================================
-   DELETE A MATERIAL
-   ========================================================= */
-
-function deleteMaterial(materialId) {
-    const materialToDelete = materials.find(
-        function (material) {
-            return material.id === materialId;
-        }
-    );
-
-    if (!materialToDelete) {
+function closeMaterialForm() {
+    if (!materialForm) {
         return;
     }
 
-    closeAllActionMenus();
+    materialForm.hidden = true;
 
-    /*
-       Ask the user before permanently deleting the record.
-    */
-    const deleteConfirmed = window.confirm(
-        'Are you sure you want to delete "' +
-        materialToDelete.name +
-        '"?\n\nThis action cannot be undone.'
-    );
-
-    if (!deleteConfirmed) {
-        return;
+    if (addMaterialButton) {
+        addMaterialButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
     }
 
-    materials = materials.filter(
-        function (material) {
-            return material.id !== materialId;
-        }
-    );
+    resetMaterialForm();
 
-    /*
-       Close the form if the deleted material was being edited.
-    */
-    if (editingMaterialId === materialId) {
-        closeMaterialForm();
+    if (addMaterialButton) {
+        addMaterialButton.focus();
     }
-
-    saveMaterials();
-    renderMaterials();
-    updateDashboard();
 }
 
-
-/* =========================================================
-   RESET THE MATERIAL FORM
-   ========================================================= */
 
 function resetMaterialForm() {
-    materialForm.reset();
+    if (materialForm) {
+        materialForm.reset();
+    }
 
     editingMaterialId = null;
+    listValues = createEmptyListValues();
 
-    selectedManufacturingMethods = [];
+    if (manufacturingMethodError) {
+        manufacturingMethodError.hidden = true;
+    }
 
-    manufacturingMethodError.hidden = true;
+    Object.keys(listDefinitions).forEach(function (key) {
+        renderList(key);
+    });
+}
 
-    materialFormTitle.textContent =
-        "Add a New Material";
 
-    saveMaterialButton.textContent =
-        "Save Material";
+function fillMaterialForm(material) {
+    Object.keys(fieldMap).forEach(function (recordKey) {
+        const field = getField(recordKey);
 
-    renderSelectedManufacturingMethods();
+        if (field) {
+            field.value =
+                material[recordKey] ?? "";
+        }
+    });
+
+    Object.keys(listDefinitions).forEach(function (key) {
+        listValues[key] =
+            Array.isArray(material[key])
+                ? [...material[key]]
+                : [];
+
+        renderList(key);
+    });
 }
 
 
 /* =========================================================
-   DISPLAY THE FIVE NEWEST MATERIALS
+   FORM BUTTON EVENTS
+   ========================================================= */
+
+if (addMaterialButton) {
+    addMaterialButton.addEventListener(
+        "click",
+        function () {
+            openMaterialForm();
+        }
+    );
+}
+
+
+if (closeFormButton) {
+    closeFormButton.addEventListener(
+        "click",
+        closeMaterialForm
+    );
+}
+
+
+if (cancelButton) {
+    cancelButton.addEventListener(
+        "click",
+        closeMaterialForm
+    );
+}
+
+
+/* =========================================================
+   MULTIPLE-SELECTION LISTS
+   ========================================================= */
+
+function addListValue(key, value) {
+    if (typeof value !== "string") {
+        return;
+    }
+
+    const cleanValue = value.trim();
+
+    if (!cleanValue) {
+        return;
+    }
+
+    const alreadyExists =
+        listValues[key].some(function (existingValue) {
+            return (
+                existingValue.toLowerCase() ===
+                cleanValue.toLowerCase()
+            );
+        });
+
+    if (!alreadyExists) {
+        listValues[key].push(cleanValue);
+    }
+
+    if (
+        key === "manufacturingMethods" &&
+        manufacturingMethodError
+    ) {
+        manufacturingMethodError.hidden = true;
+    }
+
+    renderList(key);
+}
+
+
+function removeListValue(key, valueToRemove) {
+    listValues[key] =
+        listValues[key].filter(function (value) {
+            return value !== valueToRemove;
+        });
+
+    renderList(key);
+}
+
+
+function renderList(key) {
+    const definition = listDefinitions[key];
+
+    if (!definition) {
+        return;
+    }
+
+    const container =
+        document.getElementById(
+            definition.containerId
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.replaceChildren();
+
+    listValues[key].forEach(function (value) {
+        const tag = document.createElement("span");
+
+        tag.className =
+            key === "manufacturingMethods"
+                ? "method-tag selected-method"
+                : "selection-tag";
+
+        const label = document.createElement("span");
+        label.textContent = value;
+
+        const removeButton =
+            document.createElement("button");
+
+        removeButton.type = "button";
+        removeButton.className =
+            "remove-method-button";
+        removeButton.textContent = "×";
+
+        removeButton.setAttribute(
+            "aria-label",
+            "Remove " + value
+        );
+
+        removeButton.addEventListener(
+            "click",
+            function () {
+                removeListValue(key, value);
+            }
+        );
+
+        tag.append(label, removeButton);
+        container.appendChild(tag);
+    });
+}
+
+
+/* Connect every multiple-selection field */
+
+Object.keys(listDefinitions).forEach(function (key) {
+    const definition = listDefinitions[key];
+
+    if (definition.selectId) {
+        const select =
+            document.getElementById(
+                definition.selectId
+            );
+
+        if (select) {
+            select.addEventListener(
+                "change",
+                function () {
+                    addListValue(key, select.value);
+                    select.value = "";
+                }
+            );
+        }
+    }
+
+    if (definition.inputId) {
+        const input =
+            document.getElementById(
+                definition.inputId
+            );
+
+        const button =
+            document.getElementById(
+                definition.buttonId
+            );
+
+        function addTextEntry() {
+            if (!input) {
+                return;
+            }
+
+            addListValue(key, input.value);
+            input.value = "";
+            input.focus();
+        }
+
+        if (button) {
+            button.addEventListener(
+                "click",
+                addTextEntry
+            );
+        }
+
+        if (input) {
+            input.addEventListener(
+                "keydown",
+                function (event) {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        addTextEntry();
+                    }
+                }
+            );
+        }
+    }
+});
+
+
+/* =========================================================
+   BUILD AND SAVE MATERIAL RECORD
+   ========================================================= */
+
+function buildMaterialRecord() {
+    const record = {};
+
+    Object.keys(fieldMap).forEach(function (recordKey) {
+        const field = getField(recordKey);
+
+        record[recordKey] = field
+            ? field.value.trim()
+            : "";
+    });
+
+    Object.keys(listDefinitions).forEach(function (key) {
+        record[key] = [...listValues[key]];
+    });
+
+    return record;
+}
+
+
+if (materialForm) {
+    materialForm.addEventListener(
+        "submit",
+        function (event) {
+            event.preventDefault();
+
+            if (
+                listValues.manufacturingMethods.length === 0
+            ) {
+                if (manufacturingMethodError) {
+                    manufacturingMethodError.hidden = false;
+                }
+
+                const methodSelect =
+                    document.getElementById(
+                        "material-manufacturing-method"
+                    );
+
+                if (methodSelect) {
+                    methodSelect.focus();
+                }
+
+                return;
+            }
+
+            if (manufacturingMethodError) {
+                manufacturingMethodError.hidden = true;
+            }
+
+            const formRecord =
+                buildMaterialRecord();
+
+            const now =
+                new Date().toISOString();
+
+            if (editingMaterialId) {
+                const materialIndex =
+                    materials.findIndex(
+                        function (material) {
+                            return (
+                                material.id ===
+                                editingMaterialId
+                            );
+                        }
+                    );
+
+                if (materialIndex !== -1) {
+                    materials[materialIndex] = {
+                        ...materials[materialIndex],
+                        ...formRecord,
+                        dateUpdated: now
+                    };
+                }
+            } else {
+                materials.push({
+                    id: createMaterialId(),
+                    dateAdded: now,
+                    dateUpdated: now,
+                    ...formRecord
+                });
+            }
+
+            saveMaterials();
+            renderMaterials();
+            updateDashboard();
+            closeMaterialForm();
+        }
+    );
+}
+
+
+/* =========================================================
+   SEARCH MATERIALS
+   ========================================================= */
+
+function materialMatchesSearch(
+    material,
+    searchText
+) {
+    if (!searchText) {
+        return true;
+    }
+
+    const searchableValues = [];
+
+    Object.keys(material).forEach(function (key) {
+        const value = material[key];
+
+        if (Array.isArray(value)) {
+            searchableValues.push(
+                value.join(" ")
+            );
+        } else if (
+            value !== null &&
+            value !== undefined
+        ) {
+            searchableValues.push(
+                String(value)
+            );
+        }
+    });
+
+    return searchableValues
+        .join(" ")
+        .toLowerCase()
+        .includes(searchText);
+}
+
+
+/* =========================================================
+   DISPLAY MATERIALS TABLE
    ========================================================= */
 
 function renderMaterials() {
-    /*
-       Create a copy of the array, sort it newest first,
-       and display only the five newest materials.
-    */
-    const recentMaterials = [...materials]
-        .sort(function (firstMaterial, secondMaterial) {
-            return (
-                getMaterialTime(secondMaterial) -
-                getMaterialTime(firstMaterial)
-            );
-        })
-        .slice(0, 5);
+    if (!materialsTableBody) {
+        return;
+    }
+
+    const searchText = materialSearchInput
+        ? materialSearchInput.value
+            .trim()
+            .toLowerCase()
+        : "";
+
+    const filteredMaterials =
+        materials
+            .filter(function (material) {
+                return materialMatchesSearch(
+                    material,
+                    searchText
+                );
+            })
+            .sort(function (
+                firstMaterial,
+                secondMaterial
+            ) {
+                return (
+                    new Date(
+                        secondMaterial.dateAdded
+                    ).getTime() -
+                    new Date(
+                        firstMaterial.dateAdded
+                    ).getTime()
+                );
+            })
+            .slice(0, 5);
 
     materialsTableBody.replaceChildren();
 
-    /*
-       Display a message if the database is empty.
-    */
-    if (recentMaterials.length === 0) {
+    if (filteredMaterials.length === 0) {
         const emptyRow =
             document.createElement("tr");
 
@@ -673,7 +787,9 @@ function renderMaterials() {
         emptyCell.colSpan = 6;
 
         emptyCell.textContent =
-            "No materials have been added yet.";
+            materials.length === 0
+                ? "No materials have been added yet."
+                : "No materials match your search.";
 
         emptyRow.appendChild(emptyCell);
         materialsTableBody.appendChild(emptyRow);
@@ -681,101 +797,118 @@ function renderMaterials() {
         return;
     }
 
-    /*
-       Create one table row for each recent material.
-    */
-    recentMaterials.forEach(
-        function (material) {
-            const row =
-                document.createElement("tr");
+    filteredMaterials.forEach(function (material) {
+        const row =
+            document.createElement("tr");
 
-            row.dataset.materialId = material.id;
+        row.appendChild(
+            createActionsCell(material)
+        );
 
-            row.appendChild(
-                createActionsCell(material)
-            );
+        row.appendChild(
+            createMaterialNameCell(material)
+        );
 
-            row.appendChild(
-                createMaterialNameCell(material)
-            );
+        row.appendChild(
+            createTextCell(
+                material.category ||
+                "Not provided"
+            )
+        );
 
-            row.appendChild(
-                createTableCell(
-                    material.category ||
-                    "Not provided"
-                )
-            );
+        row.appendChild(
+            createTextCell(
+                formatDate(material.dateAdded)
+            )
+        );
 
-            row.appendChild(
-                createTableCell(
-                    formatDateAdded(
-                        material.dateAdded
-                    )
-                )
-            );
+        row.appendChild(
+            createTextCell(
+                material.sourceTitle ||
+                material.sourceAuthor ||
+                material.sourceType ||
+                "Not provided"
+            )
+        );
 
-            row.appendChild(
-                createTableCell(
-                    material.source ||
-                    "Not provided"
-                )
-            );
+        row.appendChild(
+            createDocumentCell(
+                material.documentLink
+            )
+        );
 
-            row.appendChild(
-                createDocumentLinkCell(material)
-            );
-
-            materialsTableBody.appendChild(row);
-        }
-    );
+        materialsTableBody.appendChild(row);
+    });
 }
 
 
-/*
-   Convert Date Added into a sortable number.
-*/
-function getMaterialTime(material) {
-    const parsedTime = new Date(
-        material.dateAdded
-    ).getTime();
-
-    if (Number.isNaN(parsedTime)) {
-        return 0;
-    }
-
-    return parsedTime;
-}
-
-
-/*
-   Display the date in a readable format.
-   Example: July 29, 2026
-*/
-function formatDateAdded(dateAdded) {
-    const parsedDate = new Date(dateAdded);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-        return "Date unavailable";
-    }
-
-    return parsedDate.toLocaleDateString(
-        undefined,
-        {
-            year: "numeric",
-            month: "long",
-            day: "numeric"
-        }
-    );
-}
-
-
-/*
-   Create a normal text table cell safely.
-*/
-function createTableCell(value) {
-    const cell = document.createElement("td");
+function createTextCell(value) {
+    const cell =
+        document.createElement("td");
 
     cell.textContent = value;
+
+    return cell;
+}
+
+
+function createMaterialNameCell(material) {
+    const cell =
+        document.createElement("td");
+
+    const link =
+        document.createElement("a");
+
+    link.href = "#";
+    link.className = "material-name-link";
+
+    link.textContent =
+        material.name ||
+        "Unnamed material";
+
+    link.addEventListener(
+        "click",
+        function (event) {
+            event.preventDefault();
+            openMaterialForm(material);
+        }
+    );
+
+    cell.appendChild(link);
+
+    return cell;
+}
+
+
+function createDocumentCell(documentLink) {
+    const cell =
+        document.createElement("td");
+
+    if (!documentLink) {
+        const emptyMessage =
+            document.createElement("span");
+
+        emptyMessage.className =
+            "no-document";
+
+        emptyMessage.textContent =
+            "Not provided";
+
+        cell.appendChild(emptyMessage);
+
+        return cell;
+    }
+
+    const link =
+        document.createElement("a");
+
+    link.className = "document-link";
+    link.href = documentLink;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Open document";
+
+    cell.appendChild(link);
 
     return cell;
 }
@@ -786,17 +919,16 @@ function createTableCell(value) {
    ========================================================= */
 
 function createActionsCell(material) {
-    const cell = document.createElement("td");
+    const cell =
+        document.createElement("td");
+
     cell.className = "actions-column";
 
-    const menuContainer =
+    const menu =
         document.createElement("div");
 
-    menuContainer.className = "actions-menu";
+    menu.className = "actions-menu";
 
-    /*
-       Create the three-dot button.
-    */
     const menuButton =
         document.createElement("button");
 
@@ -808,7 +940,8 @@ function createActionsCell(material) {
 
     menuButton.setAttribute(
         "aria-label",
-        "Actions for " + material.name
+        "Actions for " +
+        (material.name || "material")
     );
 
     menuButton.setAttribute(
@@ -816,14 +949,16 @@ function createActionsCell(material) {
         "false"
     );
 
-    /*
-       Create the Edit/Delete dropdown.
-    */
     const dropdown =
         document.createElement("div");
 
-    dropdown.className = "actions-dropdown";
+    dropdown.className =
+        "actions-dropdown";
+
     dropdown.hidden = true;
+
+
+    /* Edit button */
 
     const editButton =
         document.createElement("button");
@@ -837,9 +972,13 @@ function createActionsCell(material) {
     editButton.addEventListener(
         "click",
         function () {
-            editMaterial(material.id);
+            closeAllActionMenus();
+            openMaterialForm(material);
         }
     );
+
+
+    /* Delete button */
 
     const deleteButton =
         document.createElement("button");
@@ -853,7 +992,37 @@ function createActionsCell(material) {
     deleteButton.addEventListener(
         "click",
         function () {
-            deleteMaterial(material.id);
+            closeAllActionMenus();
+            deleteMaterial(material);
+        }
+    );
+
+
+    /* Open and close menu */
+
+    menuButton.addEventListener(
+        "click",
+        function (event) {
+            event.stopPropagation();
+
+            const willOpen =
+                dropdown.hidden;
+
+            closeAllActionMenus();
+
+            dropdown.hidden = !willOpen;
+
+            menuButton.setAttribute(
+                "aria-expanded",
+                String(willOpen)
+            );
+        }
+    );
+
+    dropdown.addEventListener(
+        "click",
+        function (event) {
+            event.stopPropagation();
         }
     );
 
@@ -862,95 +1031,133 @@ function createActionsCell(material) {
         deleteButton
     );
 
-    menuButton.addEventListener(
-        "click",
-        function (event) {
-            /*
-               Stop the page click event from immediately
-               closing the menu.
-            */
-            event.stopPropagation();
-
-            const menuWasOpen =
-                !dropdown.hidden;
-
-            closeAllActionMenus();
-
-            if (!menuWasOpen) {
-                dropdown.hidden = false;
-
-                menuButton.setAttribute(
-                    "aria-expanded",
-                    "true"
-                );
-            }
-        }
-    );
-
-    /*
-       Prevent clicks inside the menu from reaching the page.
-    */
-    dropdown.addEventListener(
-        "click",
-        function (event) {
-            event.stopPropagation();
-        }
-    );
-
-    menuContainer.append(
+    menu.append(
         menuButton,
         dropdown
     );
 
-    cell.appendChild(menuContainer);
+    cell.appendChild(menu);
 
     return cell;
 }
 
 
-/*
-   Close every open three-dot menu.
-*/
 function closeAllActionMenus() {
-    const allDropdowns =
-        document.querySelectorAll(
-            ".actions-dropdown"
-        );
+    document
+        .querySelectorAll(".actions-dropdown")
+        .forEach(function (menu) {
+            menu.hidden = true;
+        });
 
-    const allMenuButtons =
-        document.querySelectorAll(
+    document
+        .querySelectorAll(
             ".actions-menu-button"
-        );
-
-    allDropdowns.forEach(function (dropdown) {
-        dropdown.hidden = true;
-    });
-
-    allMenuButtons.forEach(function (button) {
-        button.setAttribute(
-            "aria-expanded",
-            "false"
-        );
-    });
+        )
+        .forEach(function (button) {
+            button.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+        });
 }
 
 
-/*
-   Close an action menu when clicking elsewhere.
-*/
+/* =========================================================
+   DELETE MATERIAL
+   ========================================================= */
+
+function deleteMaterial(material) {
+    const materialName =
+        material.name ||
+        "this material";
+
+    const confirmed =
+        window.confirm(
+            'Delete "' +
+            materialName +
+            '" from the database?'
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    materials =
+        materials.filter(
+            function (savedMaterial) {
+                return (
+                    savedMaterial.id !==
+                    material.id
+                );
+            }
+        );
+
+    if (
+        editingMaterialId === material.id
+    ) {
+        closeMaterialForm();
+    }
+
+    saveMaterials();
+    renderMaterials();
+    updateDashboard();
+}
+
+
+/* =========================================================
+   FORMAT DATE
+   ========================================================= */
+
+function formatDate(dateValue) {
+    const date =
+        new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) {
+        return "Not available";
+    }
+
+    return new Intl.DateTimeFormat(
+        undefined,
+        {
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        }
+    ).format(date);
+}
+
+
+/* =========================================================
+   SEARCH, CLICK, AND KEYBOARD EVENTS
+   ========================================================= */
+
+if (materialSearchInput) {
+    materialSearchInput.addEventListener(
+        "input",
+        renderMaterials
+    );
+}
+
+
 document.addEventListener(
     "click",
     closeAllActionMenus
 );
 
 
-/*
-   Close an action menu with the Escape key.
-*/
 document.addEventListener(
     "keydown",
     function (event) {
-        if (event.key === "Escape") {
+        if (event.key !== "Escape") {
+            return;
+        }
+
+        if (
+            materialForm &&
+            !materialForm.hidden
+        ) {
+            closeMaterialForm();
+        } else {
             closeAllActionMenus();
         }
     }
@@ -958,127 +1165,39 @@ document.addEventListener(
 
 
 /* =========================================================
-   CLICKABLE MATERIAL NAME
-   ========================================================= */
-
-function createMaterialNameCell(material) {
-    const cell = document.createElement("td");
-
-    const materialLink =
-        document.createElement("a");
-
-    materialLink.className =
-        "material-name-link";
-
-    materialLink.textContent =
-        material.name || "Unnamed material";
-
-    /*
-       This points to the future full-specifications page.
-
-       For example:
-       material-details.html?id=12345
-    */
-    materialLink.href =
-        "material-details.html?id=" +
-        encodeURIComponent(material.id);
-
-    materialLink.setAttribute(
-        "aria-label",
-        "View full specifications for " +
-        material.name
-    );
-
-    cell.appendChild(materialLink);
-
-    return cell;
-}
-
-
-/* =========================================================
-   DOCUMENT LINK
-   ========================================================= */
-
-function createDocumentLinkCell(material) {
-    const cell = document.createElement("td");
-
-    if (!material.documentLink) {
-        const noDocument =
-            document.createElement("span");
-
-        noDocument.className = "no-document";
-        noDocument.textContent = "Not provided";
-
-        cell.appendChild(noDocument);
-
-        return cell;
-    }
-
-    const documentLink =
-        document.createElement("a");
-
-    documentLink.className = "document-link";
-    documentLink.href = material.documentLink;
-    documentLink.textContent = "View Document";
-
-    /*
-       Open the supplier document in a new browser tab.
-    */
-    documentLink.target = "_blank";
-    documentLink.rel = "noopener noreferrer";
-
-    documentLink.setAttribute(
-        "aria-label",
-        "Open document for " + material.name
-    );
-
-    cell.appendChild(documentLink);
-
-    return cell;
-}
-
-
-/* =========================================================
-   UPDATE THE DASHBOARD
+   DASHBOARD COUNTERS
    ========================================================= */
 
 function updateDashboard() {
-    /*
-       These totals use all saved materials, even though
-       the homepage table displays only the five newest.
-    */
-    materialCount.textContent = materials.length;
+    if (materialCount) {
+        materialCount.textContent =
+            materials.length;
+    }
 
-    const categories = new Set(
-        materials
-            .map(function (material) {
-                return material.category;
-            })
-            .filter(Boolean)
-    );
+    const categories =
+        new Set(
+            materials
+                .map(function (material) {
+                    return material.category;
+                })
+                .filter(Boolean)
+        );
 
-    categoryCount.textContent = categories.size;
+    if (categoryCount) {
+        categoryCount.textContent =
+            categories.size;
+    }
 
-    recordCount.textContent = materials.length;
+    if (recordCount) {
+        recordCount.textContent =
+            materials.length;
+    }
 }
 
 
 /* =========================================================
-   START THE WEBSITE
+   START WEBSITE
    ========================================================= */
 
-/*
-   Save once during startup so older records receive their
-   migrated date and updated data structure.
-*/
-saveMaterials();
-
-/*
-   Display the five newest materials.
-*/
 renderMaterials();
-
-/*
-   Display totals for the entire database.
-*/
 updateDashboard();
