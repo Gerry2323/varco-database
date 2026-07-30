@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>CSV Files | VARCO Materials Database</title>
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <!-- PAGE HEADER -->
+
+    <header class="main-header">
+        <p class="project-label">
+            NASA Materials Research Project
+        </p>
+
+        <h1>CSV &amp; Spreadsheet Files</h1>
+
+        <p class="subtitle">
+            Upload, review, edit, rename, and manage tabular research data
+        </p>
+    </header>
+
+    <!-- NAVIGATION -->
+
+    <nav
+        class="navigation"
+        aria-label="Main navigation"
+    >
+        <a href="./index.html#dashboard">
+            Dashboard
+        </a>
+
+        <a href="./index.html#materials">
+            Current Materials
+        </a>
+
+        <a
+            href="./csv-files.html"
+            aria-current="page"
+        >
+            CSV Files
+        </a>
+
+        <a href="./index.html#about">
+            About
+        </a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+
+    <main>
+        <!-- UPLOAD SECTION -->
+
+        <section aria-labelledby="upload-heading">
+            <div class="section-heading">
+                <div>
+                    <h2 id="upload-heading">
+                        Upload Files
+                    </h2>
+
+                    <p>
+                        Add CSV, TSV, XLS, or XLSX files to your browser database.
+                    </p>
+                </div>
+            </div>
+
+            <div
+                id="upload-zone"
+                class="upload-zone"
+                role="button"
+                tabindex="0"
+                aria-label="Upload spreadsheet files"
+            >
+                <p>
+                    <strong>
+                        Drop spreadsheet files here
+                    </strong>
+                </p>
+
+                <p class="file-help">
+                    or choose one or more files from your computer
+                </p>
+
+                <button
+                    id="choose-files-button"
+                    class="primary-button"
+                    type="button"
+                >
+                    Choose Files
+                </button>
+            </div>
+
+            <!--
+                Keep this input outside the upload zone.
+                This prevents repeated click events.
+            -->
+
+            <input
+                id="file-input"
+                type="file"
+                accept=".csv,.tsv,.xls,.xlsx"
+                multiple
+                hidden
+            >
+
+            <p
+                id="file-message"
+                class="file-message"
+                role="status"
+                aria-live="polite"
+            ></p>
+        </section>
+
+        <!-- UPLOADED FILES SECTION -->
+
+        <section aria-labelledby="uploaded-files-heading">
+            <div class="section-heading file-list-heading">
+                <div>
+                    <h2 id="uploaded-files-heading">
+                        Uploaded Files
+                    </h2>
+
+                    <p>
+                        <span id="uploaded-file-count">0</span>
+                        saved file(s)
+                    </p>
+                </div>
+
+                <input
+                    id="file-search"
+                    class="file-search"
+                    type="search"
+                    placeholder="Search files..."
+                    aria-label="Search uploaded files"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="table-container">
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">File Name</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Rows</th>
+                            <th scope="col">Added</th>
+                            <th scope="col">Last Modified</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="file-table-body">
+                        <tr class="empty-row">
+                            <td colspan="6">
+                                No files have been uploaded yet.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- FILE VIEWER -->
+
+        <section
+            id="file-viewer"
+            aria-labelledby="viewer-title"
+            hidden
+        >
+            <div class="section-heading">
+                <div>
+                    <h2 id="viewer-title">
+                        File Viewer
+                    </h2>
+
+                    <p id="viewer-details"></p>
+                </div>
+
+                <div class="viewer-buttons">
+                    <button
+                        id="edit-file-button"
+                        class="secondary-button"
+                        type="button"
+                    >
+                        Edit
+                    </button>
+
+                    <button
+                        id="download-file-button"
+                        class="secondary-button"
+                        type="button"
+                    >
+                        Download CSV
+                    </button>
+
+                    <button
+                        id="close-viewer-button"
+                        class="primary-button"
+                        type="button"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+
+            <p
+                id="edit-help"
+                class="file-help"
+                hidden
+            >
+                Click any cell to change it, then select Save Changes.
+            </p>
+
+            <div
+                id="spreadsheet-container"
+                class="spreadsheet-container"
+            ></div>
+
+            <div
+                id="editor-buttons"
+                class="form-buttons"
+                hidden
+            >
+                <button
+                    id="cancel-edit-button"
+                    class="secondary-button"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="add-row-button"
+                    class="secondary-button"
+                    type="button"
+                >
+                    + Add Row
+                </button>
+
+                <button
+                    id="add-column-button"
+                    class="secondary-button"
+                    type="button"
+                >
+                    + Add Column
+                </button>
+
+                <button
+                    id="save-file-button"
+                    class="primary-button"
+                    type="button"
+                >
+                    Save Changes
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- PAGE FOOTER -->
+
+    <footer>
+        <p>
+            VARCO Materials Database
+        </p>
+    </footer>
+
+    <!--
+        XLSX must load before csv-files.js.
+
+        The version number after csv-files.js forces the browser
+        to load the updated JavaScript instead of an older cached copy.
+    -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
+    ></script>
+
+    <script src="./csv-files.js?v=2"></script>
+</body>
+</html>

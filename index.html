@@ -4,9 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>VARCO Materials Database</title>
-
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -14,9 +12,7 @@
 
     <header class="main-header">
         <p class="project-label">NASA Materials Research Project</p>
-
         <h1>VARCO Materials Database</h1>
-
         <p class="subtitle">
             Lunar regolith, ceramic coatings, substrates, and test data
         </p>
@@ -25,17 +21,13 @@
     <nav class="navigation">
         <a href="#dashboard">Dashboard</a>
         <a href="#materials">Current Materials</a>
+        <a href="csv-files.html">CSV Files</a>
         <a href="#about">About</a>
     </nav>
 
     <main>
 
-        <!-- =====================================================
-             DASHBOARD
-             ===================================================== -->
-
         <section id="dashboard" class="welcome-section">
-
             <h2>Materials Dashboard</h2>
 
             <p>
@@ -44,7 +36,6 @@
             </p>
 
             <div class="summary-cards">
-
                 <article class="summary-card">
                     <p>Total Materials</p>
                     <strong id="material-count">0</strong>
@@ -59,26 +50,15 @@
                     <p>Saved Records</p>
                     <strong id="record-count">0</strong>
                 </article>
-
             </div>
-
         </section>
-
-
-        <!-- =====================================================
-             CURRENT MATERIALS
-             ===================================================== -->
 
         <section id="materials" class="materials-section">
 
             <div class="section-heading">
-
                 <div>
                     <h2>Current Materials</h2>
-
-                    <p>
-                        The five most recently added materials are shown below.
-                    </p>
+                    <p>The five most recently added materials are shown below.</p>
                 </div>
 
                 <button
@@ -89,28 +69,19 @@
                 >
                     + Add Material
                 </button>
-
             </div>
-
-
-            <!-- =================================================
-                 ADD AND EDIT MATERIAL FORM
-                 ================================================= -->
 
             <form id="material-form" class="material-form" hidden>
 
                 <div class="form-header">
-
                     <div>
-                        <h3 id="material-form-title">
-                            Add a New Material
-                        </h3>
+                        <h3 id="material-form-title">Add a New Material</h3>
 
                         <p class="required-fields-note">
                             Fields marked
                             <span aria-hidden="true">*</span>
-                            are required. Leave unavailable properties blank.
-                            Blank values are never treated as zero.
+                            are required. Leave unavailable properties blank;
+                            blank values are never treated as zero.
                         </p>
                     </div>
 
@@ -121,16 +92,10 @@
                     >
                         ×
                     </button>
-
                 </div>
 
-
-                <!-- =============================================
-                     1. BASIC INFORMATION
-                     ============================================= -->
-
+                <!-- 1. Basic Information -->
                 <details class="form-section" open>
-
                     <summary>
                         <span>1. Basic Information</span>
                         <span class="section-status">Required</span>
@@ -139,7 +104,6 @@
                     <div class="form-grid">
 
                         <div class="form-group">
-
                             <label for="material-name">
                                 Material Name
                                 <span class="required-mark">*</span>
@@ -151,12 +115,9 @@
                                 placeholder="Example: Aluminum Oxide 99.95%"
                                 required
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="material-category">
                                 Category
                                 <span class="required-mark">*</span>
@@ -182,42 +143,29 @@
                                 <option value="Substrate">
                                 <option value="Other">
                             </datalist>
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="material-feedstock-form">
                                 Feedstock Form
                                 <span class="required-mark">*</span>
                             </label>
 
                             <select id="material-feedstock-form" required>
-                                <option value="">
-                                    Select a feedstock form
-                                </option>
-
+                                <option value="">Select a feedstock form</option>
                                 <option value="Powder">Powder</option>
                                 <option value="Wire">Wire</option>
                                 <option value="Rod">Rod</option>
                                 <option value="Suspension">Suspension</option>
-
                                 <option value="Solution precursor">
                                     Solution precursor
                                 </option>
-
                                 <option value="Other">Other</option>
                             </select>
-
                         </div>
 
-
                         <div class="form-group">
-
-                            <label for="material-date-added">
-                                Date Added
-                            </label>
+                            <label for="material-date-added">Date Added</label>
 
                             <input
                                 id="material-date-added"
@@ -225,20 +173,13 @@
                                 value="Created automatically when saved"
                                 disabled
                             >
-
                         </div>
 
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     2. COMPOSITION
-                     ============================================= -->
-
+                <!-- 2. Composition -->
                 <details class="form-section" open>
-
                     <summary>
                         <span>2. Composition</span>
                         <span class="section-status">Required</span>
@@ -247,7 +188,6 @@
                     <div class="form-grid">
 
                         <div class="form-group">
-
                             <label for="material-composition">
                                 Composition as Reported
                                 <span class="required-mark">*</span>
@@ -259,120 +199,65 @@
                                 placeholder="Example: Al2O3 99.95+"
                                 required
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="material-composition-basis">
                                 Composition Basis
                                 <span class="required-mark">*</span>
                             </label>
 
-                            <select
-                                id="material-composition-basis"
-                                required
-                            >
-                                <option value="">
-                                    Select a composition basis
-                                </option>
-
+                            <select id="material-composition-basis" required>
+                                <option value="">Select a composition basis</option>
                                 <option value="wt%">wt%</option>
                                 <option value="vol%">vol%</option>
                                 <option value="mol%">mol%</option>
                                 <option value="atomic%">atomic%</option>
-
-                                <option value="Not specified">
-                                    Not specified
-                                </option>
+                                <option value="Not specified">Not specified</option>
                             </select>
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="material-manufacturing-method">
                                 Manufacturing Methods
                                 <span class="required-mark">*</span>
                             </label>
 
                             <select id="material-manufacturing-method">
-
-                                <option value="">
-                                    Select a method to add
-                                </option>
-
-                                <option value="Gas atomized">
-                                    Gas atomized
-                                </option>
-
-                                <option value="Water atomized">
-                                    Water atomized
-                                </option>
-
+                                <option value="">Select a method to add</option>
+                                <option value="Gas atomized">Gas atomized</option>
+                                <option value="Water atomized">Water atomized</option>
                                 <option value="Mechanically clad">
                                     Mechanically clad
                                 </option>
-
                                 <option value="Chemically clad">
                                     Chemically clad
                                 </option>
-
-                                <option value="Agglomerated">
-                                    Agglomerated
-                                </option>
-
-                                <option value="Sintered">
-                                    Sintered
-                                </option>
-
+                                <option value="Agglomerated">Agglomerated</option>
+                                <option value="Sintered">Sintered</option>
                                 <option value="Agglomerated and sintered">
                                     Agglomerated and sintered
                                 </option>
-
                                 <option value="Fused and crushed">
                                     Fused and crushed
                                 </option>
-
-                                <option value="Blended">
-                                    Blended
-                                </option>
-
-                                <option value="Spray dried">
-                                    Spray dried
-                                </option>
-
+                                <option value="Blended">Blended</option>
+                                <option value="Spray dried">Spray dried</option>
                                 <option value="Plasma densified">
                                     Plasma densified
                                 </option>
-
-                                <option value="Precipitated">
-                                    Precipitated
-                                </option>
-
+                                <option value="Precipitated">Precipitated</option>
                                 <option value="Hydride-dehydride">
                                     Hydride-dehydride
                                 </option>
-
-                                <option value="Proprietary">
-                                    Proprietary
-                                </option>
-
-                                <option value="Other">
-                                    Other
-                                </option>
-
-                                <option value="Not reported">
-                                    Not reported
-                                </option>
-
+                                <option value="Proprietary">Proprietary</option>
+                                <option value="Other">Other</option>
+                                <option value="Not reported">Not reported</option>
                             </select>
 
                             <p class="selection-instructions">
-                                Select each method needed. Selected methods
-                                appear below and can be removed.
+                                Select each method needed. Selected methods appear
+                                below and can be removed.
                             </p>
 
                             <div
@@ -388,20 +273,13 @@
                             >
                                 Select at least one manufacturing method.
                             </p>
-
                         </div>
 
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     3. FEEDSTOCK INFORMATION
-                     ============================================= -->
-
+                <!-- 3. Feedstock Information -->
                 <details class="form-section">
-
                     <summary>
                         <span>3. Feedstock Information</span>
                         <span class="section-status">Optional</span>
@@ -410,7 +288,6 @@
                     <div class="form-grid">
 
                         <div class="form-group">
-
                             <label for="particle-size-min">
                                 Minimum Particle Size (µm)
                             </label>
@@ -420,12 +297,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="particle-size-max">
                                 Maximum Particle Size (µm)
                             </label>
@@ -435,12 +309,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="particle-size-average">
                                 Average Particle Size (µm)
                             </label>
@@ -450,12 +321,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="particle-size-method">
                                 Particle-Size Measurement Method
                             </label>
@@ -465,79 +333,37 @@
                                 type="text"
                                 placeholder="Example: Laser diffraction"
                             >
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="material-morphology">
                                 Morphology
                             </label>
 
                             <select id="material-morphology">
-
-                                <option value="">
-                                    Select a morphology to add
-                                </option>
-
-                                <option value="Spherical">
-                                    Spherical
-                                </option>
-
-                                <option value="Angular">
-                                    Angular
-                                </option>
-
-                                <option value="Irregular">
-                                    Irregular
-                                </option>
-
-                                <option value="Dendritic">
-                                    Dendritic
-                                </option>
-
-                                <option value="Spongy">
-                                    Spongy
-                                </option>
-
-                                <option value="Globular">
-                                    Globular
-                                </option>
-
+                                <option value="">Select a morphology to add</option>
+                                <option value="Spherical">Spherical</option>
+                                <option value="Angular">Angular</option>
+                                <option value="Irregular">Irregular</option>
+                                <option value="Dendritic">Dendritic</option>
+                                <option value="Spongy">Spongy</option>
+                                <option value="Globular">Globular</option>
                                 <option value="Hollow spherical">
                                     Hollow spherical
                                 </option>
-
-                                <option value="Agglomerated">
-                                    Agglomerated
-                                </option>
-
-                                <option value="Other">
-                                    Other
-                                </option>
-
-                                <option value="Not reported">
-                                    Not reported
-                                </option>
-
+                                <option value="Agglomerated">Agglomerated</option>
+                                <option value="Other">Other</option>
+                                <option value="Not reported">Not reported</option>
                             </select>
-
-                            <p class="selection-instructions">
-                                Select every morphology reported for the material.
-                            </p>
 
                             <div
                                 id="selected-morphologies"
                                 class="selected-methods"
                                 aria-live="polite"
                             ></div>
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="powder-flowability">
                                 Powder Flowability
                             </label>
@@ -547,12 +373,9 @@
                                 type="text"
                                 placeholder="Include value, units, and method"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="apparent-density">
                                 Apparent Density (g/cm³)
                             </label>
@@ -562,12 +385,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="material-purity">
                                 Purity (%)
                             </label>
@@ -577,63 +397,33 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
-                            <label for="material-supplier">
-                                Supplier
-                            </label>
+                            <label for="material-supplier">Supplier</label>
 
                             <input
                                 id="material-supplier"
                                 type="text"
                                 placeholder="Example: Oerlikon Metco"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
-                            <label for="product-name">
-                                Product Name
-                            </label>
-
-                            <input
-                                id="product-name"
-                                type="text"
-                            >
-
+                            <label for="product-name">Product Name</label>
+                            <input id="product-name" type="text">
                         </div>
 
-
                         <div class="form-group">
-
-                            <label for="product-number">
-                                Product Number
-                            </label>
-
-                            <input
-                                id="product-number"
-                                type="text"
-                            >
-
+                            <label for="product-number">Product Number</label>
+                            <input id="product-number" type="text">
                         </div>
 
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     4. MECHANICAL PROPERTIES
-                     ============================================= -->
-
+                <!-- 4. Mechanical Properties -->
                 <details class="form-section">
-
                     <summary>
                         <span>4. Mechanical Properties</span>
                         <span class="section-status">Optional</span>
@@ -642,7 +432,6 @@
                     <div class="form-grid">
 
                         <div class="form-group">
-
                             <label for="material-density">
                                 Density (g/cm³)
                             </label>
@@ -652,12 +441,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="material-porosity">
                                 Porosity (%)
                             </label>
@@ -667,12 +453,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="hardness-value">
                                 Hardness Value
                             </label>
@@ -683,12 +466,9 @@
                                 step="any"
                                 placeholder="Example: 1200"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="hardness-scale-load">
                                 Hardness Scale and Load
                             </label>
@@ -698,12 +478,9 @@
                                 type="text"
                                 placeholder="Example: HV0.3, HV1, HK0.1, or HRC"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="youngs-modulus">
                                 Young’s Modulus (GPa)
                             </label>
@@ -713,12 +490,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="poissons-ratio">
                                 Poisson’s Ratio
                             </label>
@@ -728,12 +502,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="tensile-strength">
                                 Tensile Strength (MPa)
                             </label>
@@ -743,12 +514,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="fracture-toughness">
                                 Fracture Toughness (MPa·m½)
                             </label>
@@ -758,20 +526,13 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     5. THERMAL AND OTHER PROPERTIES
-                     ============================================= -->
-
+                <!-- 5. Thermal and Other Properties -->
                 <details class="form-section">
-
                     <summary>
                         <span>5. Thermal and Other Properties</span>
                         <span class="section-status">Optional</span>
@@ -780,7 +541,6 @@
                     <div class="form-grid">
 
                         <div class="form-group">
-
                             <label for="material-melting-point">
                                 Melting Point or Range (°C)
                             </label>
@@ -790,12 +550,9 @@
                                 type="text"
                                 placeholder="Example: 2050–2072"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="maximum-service-temperature">
                                 Maximum Service Temperature (°C)
                             </label>
@@ -805,12 +562,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="thermal-conductivity">
                                 Thermal Conductivity (W/m·K)
                             </label>
@@ -820,12 +574,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="thermal-expansion">
                                 Coefficient of Thermal Expansion (µm/m·K)
                             </label>
@@ -835,12 +586,9 @@
                                 type="number"
                                 step="any"
                             >
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="electrical-property">
                                 Electrical Resistivity or Conductivity
                             </label>
@@ -848,22 +596,15 @@
                             <input
                                 id="electrical-property"
                                 type="text"
-                                placeholder="Include the value, units, and whether it is resistivity or conductivity"
+                                placeholder="Include value, units, and whether it is resistivity or conductivity"
                             >
-
                         </div>
 
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     6. APPLICATIONS AND PROCESSING
-                     ============================================= -->
-
+                <!-- 6. Applications and Processing -->
                 <details class="form-section">
-
                     <summary>
                         <span>6. Applications and Processing</span>
                         <span class="section-status">Optional</span>
@@ -872,13 +613,11 @@
                     <div class="form-grid">
 
                         <div class="form-group full-width">
-
                             <label for="intended-application-input">
                                 Intended Applications
                             </label>
 
                             <div class="repeatable-entry">
-
                                 <input
                                     id="intended-application-input"
                                     type="text"
@@ -892,79 +631,39 @@
                                 >
                                     Add
                                 </button>
-
                             </div>
-
-                            <p class="selection-instructions">
-                                Enter one application and select Add. Repeat
-                                this for every application that applies.
-                            </p>
 
                             <div
                                 id="selected-intended-applications"
                                 class="selected-methods"
                                 aria-live="polite"
                             ></div>
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="recommended-spray-process">
                                 Recommended Spray Processes
                             </label>
 
                             <select id="recommended-spray-process">
-
-                                <option value="">
-                                    Select a process to add
-                                </option>
-
-                                <option value="Plasma spray">
-                                    Plasma spray
-                                </option>
-
-                                <option value="VPS/LPPS">
-                                    VPS/LPPS
-                                </option>
-
-                                <option value="HVOF">
-                                    HVOF
-                                </option>
-
-                                <option value="HVAF">
-                                    HVAF
-                                </option>
-
-                                <option value="Flame spray">
-                                    Flame spray
-                                </option>
-
+                                <option value="">Select a process to add</option>
+                                <option value="Plasma spray">Plasma spray</option>
+                                <option value="VPS/LPPS">VPS/LPPS</option>
+                                <option value="HVOF">HVOF</option>
+                                <option value="HVAF">HVAF</option>
+                                <option value="Flame spray">Flame spray</option>
                                 <option value="Detonation gun">
                                     Detonation gun
                                 </option>
-
-                                <option value="Cold spray">
-                                    Cold spray
-                                </option>
-
+                                <option value="Cold spray">Cold spray</option>
                                 <option value="Wire arc spray">
                                     Wire arc spray
                                 </option>
-
                                 <option value="Suspension plasma spray">
                                     Suspension plasma spray
                                 </option>
-
-                                <option value="Other">
-                                    Other
-                                </option>
-
-                                <option value="Not reported">
-                                    Not reported
-                                </option>
-
+                                <option value="Other">Other</option>
+                                <option value="Not reported">Not reported</option>
                             </select>
 
                             <div
@@ -972,50 +671,36 @@
                                 class="selected-methods"
                                 aria-live="polite"
                             ></div>
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="wear-mechanism">
                                 Wear Mechanisms
                             </label>
 
                             <select id="wear-mechanism">
-
                                 <option value="">
                                     Select a wear mechanism to add
                                 </option>
-
                                 <option value="Abrasive wear">
                                     Abrasive wear
                                 </option>
-
                                 <option value="Adhesive/sliding wear">
                                     Adhesive/sliding wear
                                 </option>
-
-                                <option value="Fretting">
-                                    Fretting
-                                </option>
-
+                                <option value="Fretting">Fretting</option>
                                 <option value="Solid-particle erosion">
                                     Solid-particle erosion
                                 </option>
-
                                 <option value="Cavitation erosion">
                                     Cavitation erosion
                                 </option>
-
                                 <option value="Slurry erosion">
                                     Slurry erosion
                                 </option>
-
                                 <option value="Not reported">
                                     Not reported
                                 </option>
-
                             </select>
 
                             <div
@@ -1023,12 +708,9 @@
                                 class="selected-methods"
                                 aria-live="polite"
                             ></div>
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="corrosion-resistance">
                                 Corrosion Resistance
                             </label>
@@ -1037,12 +719,9 @@
                                 id="corrosion-resistance"
                                 rows="3"
                             ></textarea>
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="oxidation-resistance">
                                 Oxidation Resistance
                             </label>
@@ -1051,12 +730,9 @@
                                 id="oxidation-resistance"
                                 rows="3"
                             ></textarea>
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="reported-advantages">
                                 Reported Advantages
                             </label>
@@ -1066,12 +742,9 @@
                                 rows="4"
                                 placeholder="Enter each reported advantage on a new line"
                             ></textarea>
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="reported-limitations">
                                 Reported Limitations
                             </label>
@@ -1081,20 +754,13 @@
                                 rows="4"
                                 placeholder="Enter each reported limitation on a new line"
                             ></textarea>
-
                         </div>
 
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     7. SOURCE AND REFERENCES
-                     ============================================= -->
-
+                <!-- 7. Source and References -->
                 <details class="form-section" open>
-
                     <summary>
                         <span>7. Source and References</span>
                         <span class="section-status">Required</span>
@@ -1103,53 +769,30 @@
                     <div class="form-grid">
 
                         <div class="form-group">
-
                             <label for="material-source">
                                 Source Type
                                 <span class="required-mark">*</span>
                             </label>
 
                             <select id="material-source" required>
-
-                                <option value="">
-                                    Select a source type
-                                </option>
-
-                                <option value="Article">
-                                    Article
-                                </option>
-
+                                <option value="">Select a source type</option>
+                                <option value="Article">Article</option>
                                 <option value="Manufacturer datasheet">
                                     Manufacturer datasheet
                                 </option>
-
                                 <option value="Supplier website">
                                     Supplier website
                                 </option>
-
                                 <option value="Experimental data">
                                     Experimental data
                                 </option>
-
-                                <option value="Handbook">
-                                    Handbook
-                                </option>
-
-                                <option value="Standard">
-                                    Standard
-                                </option>
-
-                                <option value="Other">
-                                    Other
-                                </option>
-
+                                <option value="Handbook">Handbook</option>
+                                <option value="Standard">Standard</option>
+                                <option value="Other">Other</option>
                             </select>
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="source-title">
                                 Source Title
                                 <span class="required-mark">*</span>
@@ -1161,12 +804,9 @@
                                 placeholder="Article, datasheet, webpage, or report title"
                                 required
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="source-author">
                                 Author or Organization
                                 <span class="required-mark">*</span>
@@ -1178,12 +818,9 @@
                                 placeholder="Example: Oerlikon Metco"
                                 required
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="publication-year">
                                 Publication Year
                             </label>
@@ -1196,12 +833,9 @@
                                 step="1"
                                 placeholder="Example: 2026"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="source-filename">
                                 Source Filename
                             </label>
@@ -1211,12 +845,9 @@
                                 type="text"
                                 placeholder="Example: DSM-0399.pdf"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="source-page">
                                 Source Page
                             </label>
@@ -1226,12 +857,9 @@
                                 type="text"
                                 placeholder="Example: 3 or 3–5"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="table-figure-number">
                                 Table or Figure Number
                             </label>
@@ -1241,12 +869,9 @@
                                 type="text"
                                 placeholder="Example: Table 2"
                             >
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="doi-url">
                                 DOI or URL
                             </label>
@@ -1256,12 +881,9 @@
                                 type="text"
                                 placeholder="Example: 10.xxxx/xxxxx or https://..."
                             >
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="material-document-link">
                                 Document Link
                             </label>
@@ -1271,18 +893,14 @@
                                 type="url"
                                 placeholder="https://example.com/material-datasheet.pdf"
                             >
-
                         </div>
 
-
                         <div class="form-group full-width">
-
                             <label for="test-standard-input">
                                 Test Standards
                             </label>
 
                             <div class="repeatable-entry">
-
                                 <input
                                     id="test-standard-input"
                                     type="text"
@@ -1296,137 +914,78 @@
                                 >
                                     Add
                                 </button>
-
                             </div>
-
-                            <p class="selection-instructions">
-                                Enter one standard and select Add. Repeat this
-                                for every applicable standard.
-                            </p>
 
                             <div
                                 id="selected-test-standards"
                                 class="selected-methods"
                                 aria-live="polite"
                             ></div>
-
                         </div>
 
-
                         <div class="form-group">
-
                             <label for="data-quality-status">
                                 Data-Quality Status
                             </label>
 
                             <select id="data-quality-status">
-
-                                <option value="">
-                                    Select a status
-                                </option>
-
+                                <option value="">Select a status</option>
                                 <option value="Directly reported">
                                     Directly reported
                                 </option>
-
-                                <option value="Calculated">
-                                    Calculated
-                                </option>
-
-                                <option value="Estimated">
-                                    Estimated
-                                </option>
-
+                                <option value="Calculated">Calculated</option>
+                                <option value="Estimated">Estimated</option>
                                 <option value="Supplier-reported">
                                     Supplier-reported
                                 </option>
-
                                 <option value="Not reported">
                                     Not reported
                                 </option>
-
                                 <option value="Needs verification">
                                     Needs verification
                                 </option>
-
                             </select>
-
                         </div>
 
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     8. NOTES
-                     ============================================= -->
-
+                <!-- 8. Notes -->
                 <details class="form-section">
-
                     <summary>
                         <span>8. Notes</span>
                         <span class="section-status">Optional</span>
                     </summary>
 
                     <div class="form-grid">
-
                         <div class="form-group full-width">
-
-                            <label for="material-notes">
-                                Notes
-                            </label>
+                            <label for="material-notes">Notes</label>
 
                             <textarea
                                 id="material-notes"
                                 rows="6"
                                 placeholder="Add assumptions, uncertainties, test conditions, or verification notes"
                             ></textarea>
-
                         </div>
-
                     </div>
-
                 </details>
 
-
-                <!-- =============================================
-                     FORM BUTTONS
-                     ============================================= -->
-
                 <div class="form-buttons">
-
-                    <button
-                        id="cancel-button"
-                        type="button"
-                    >
+                    <button id="cancel-button" type="button">
                         Cancel
                     </button>
 
-                    <button
-                        id="save-material-button"
-                        type="submit"
-                    >
+                    <button id="save-material-button" type="submit">
                         Save Material
                     </button>
-
                 </div>
 
             </form>
 
-
-            <!-- =================================================
-                 RECENT MATERIALS TABLE
-                 ================================================= -->
-
             <div class="table-container">
-
                 <table>
-
                     <thead>
-
                         <tr>
-
                             <th
                                 class="actions-column"
                                 scope="col"
@@ -1435,42 +994,22 @@
                                 Actions
                             </th>
 
-                            <th scope="col">
-                                Material Name
-                            </th>
-
-                            <th scope="col">
-                                Category
-                            </th>
-
-                            <th scope="col">
-                                Date Added
-                            </th>
-
-                            <th scope="col">
-                                Source
-                            </th>
-
-                            <th scope="col">
-                                Document Link
-                            </th>
-
+                            <th scope="col">Material Name</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Date Added</th>
+                            <th scope="col">Source</th>
+                            <th scope="col">Document Link</th>
                         </tr>
-
                     </thead>
 
                     <tbody id="materials-table-body">
-
                         <tr class="empty-row">
                             <td colspan="6">
                                 No materials have been added yet.
                             </td>
                         </tr>
-
                     </tbody>
-
                 </table>
-
             </div>
 
             <p class="recent-materials-note">
@@ -1479,13 +1018,7 @@
 
         </section>
 
-
-        <!-- =====================================================
-             ABOUT
-             ===================================================== -->
-
         <section id="about" class="about-section">
-
             <h2>About the Database</h2>
 
             <p>
@@ -1494,22 +1027,14 @@
                 manufacturing methods, documents, and experimental coating
                 results.
             </p>
-
         </section>
 
     </main>
-
-
-    <!-- =========================================================
-         FOOTER
-         ========================================================= -->
 
     <footer>
         <p>VARCO Materials Database</p>
     </footer>
 
-
-    <!-- Connects the JavaScript file -->
     <script src="script.js"></script>
 
 </body>
