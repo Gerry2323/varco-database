@@ -2,8 +2,10 @@
 <html lang="en">
 
 <head>
+    <!-- Allows special characters to display correctly -->
     <meta charset="UTF-8">
 
+    <!-- Makes the website responsive -->
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -11,13 +13,17 @@
 
     <title>VARCO Materials Database</title>
 
+    <!-- Connects the CSS file -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+    <!-- Main website header -->
     <header class="main-header">
-        <p class="project-label">NASA Materials Research Project</p>
+        <p class="project-label">
+            NASA Materials Research Project
+        </p>
 
         <h1>VARCO Materials Database</h1>
 
@@ -26,15 +32,16 @@
         </p>
     </header>
 
+    <!-- Sticky navigation bar -->
     <nav class="navigation">
         <a href="#dashboard">Dashboard</a>
-        <a href="#materials">Materials</a>
+        <a href="#materials">Current Materials</a>
         <a href="#about">About</a>
     </nav>
 
     <main>
 
-        <!-- Dashboard section -->
+        <!-- Dashboard -->
         <section id="dashboard" class="welcome-section">
             <h2>Materials Dashboard</h2>
 
@@ -63,30 +70,41 @@
             </div>
         </section>
 
-        <!-- Materials section -->
+        <!-- Current materials -->
         <section id="materials" class="materials-section">
 
             <div class="section-heading">
                 <div>
-                    <h2>Materials</h2>
-                    <p>Search and review the materials currently saved.</p>
+                    <h2>Current Materials</h2>
+
+                    <p>
+                        The five most recently added materials are shown below.
+                    </p>
                 </div>
 
-                <button id="add-material-button" type="button">
+                <button
+                    id="add-material-button"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="material-form"
+                >
                     + Add Material
                 </button>
             </div>
 
-            <!-- Add Material form -->
+            <!-- Add and Edit Material form -->
             <form id="material-form" class="material-form" hidden>
 
                 <div class="form-header">
-                    <h3>Add a New Material</h3>
+                    <!-- JavaScript changes this title during editing -->
+                    <h3 id="material-form-title">
+                        Add a New Material
+                    </h3>
 
                     <button
                         id="close-form-button"
                         type="button"
-                        aria-label="Close form"
+                        aria-label="Close material form"
                     >
                         ×
                     </button>
@@ -94,6 +112,7 @@
 
                 <div class="form-grid">
 
+                    <!-- Material name -->
                     <div class="form-group">
                         <label for="material-name">
                             Material Name
@@ -102,20 +121,27 @@
                         <input
                             id="material-name"
                             type="text"
-                            placeholder="Example: Alumina"
+                            placeholder="Example: Metco 105NS"
                             required
                         >
                     </div>
 
+                    <!-- Category -->
                     <div class="form-group">
                         <label for="material-category">
                             Category
                         </label>
 
                         <select id="material-category" required>
-                            <option value="">Select a category</option>
+                            <option value="">
+                                Select a category
+                            </option>
+
                             <option value="Ceramic">Ceramic</option>
                             <option value="Metal">Metal</option>
+                            <option value="Alloy">Alloy</option>
+                            <option value="Carbide">Carbide</option>
+                            <option value="Cermet">Cermet</option>
                             <option value="Regolith">Regolith</option>
                             <option value="Composite">Composite</option>
                             <option value="Substrate">Substrate</option>
@@ -124,6 +150,7 @@
                         </select>
                     </div>
 
+                    <!-- Composition -->
                     <div class="form-group">
                         <label for="material-composition">
                             Composition
@@ -137,6 +164,115 @@
                         >
                     </div>
 
+                    <!-- Multiple manufacturing methods -->
+                    <div class="form-group">
+                        <label for="material-manufacturing-method">
+                            Manufacturing Methods
+                        </label>
+
+                        <select id="material-manufacturing-method">
+                            <option value="">
+                                Select a method to add
+                            </option>
+
+                            <option value="Mechanically clad">
+                                Mechanically clad
+                            </option>
+
+                            <option value="Blended">
+                                Blended
+                            </option>
+
+                            <option value="Mechanically clad and blended">
+                                Mechanically clad and blended
+                            </option>
+
+                            <option value="Chemically clad">
+                                Chemically clad
+                            </option>
+
+                            <option value="Gas atomized">
+                                Gas atomized
+                            </option>
+
+                            <option value="Water atomized">
+                                Water atomized
+                            </option>
+
+                            <option value="Water and gas atomized">
+                                Water and gas atomized
+                            </option>
+
+                            <option value="Agglomerated">
+                                Agglomerated
+                            </option>
+
+                            <option value="Agglomerated and sintered">
+                                Agglomerated and sintered
+                            </option>
+
+                            <option value="Agglomerated, sintered and blended">
+                                Agglomerated, sintered and blended
+                            </option>
+
+                            <option value="Sintered and blended">
+                                Sintered and blended
+                            </option>
+
+                            <option value="Precipitated">
+                                Precipitated
+                            </option>
+
+                            <option value="Clad">
+                                Clad
+                            </option>
+
+                            <option value="Fused and crushed">
+                                Fused and crushed
+                            </option>
+
+                            <option value="Sintered and crushed">
+                                Sintered and crushed
+                            </option>
+
+                            <option value="Cast and crushed">
+                                Cast and crushed
+                            </option>
+
+                            <option value="Spray dried">
+                                Spray dried
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                            <option value="Unknown">
+                                Unknown
+                            </option>
+                        </select>
+
+                        <p class="selection-instructions">
+                            Select each method you want to add.
+                        </p>
+
+                        <!-- Selected methods appear as removable tags -->
+                        <div
+                            id="selected-manufacturing-methods"
+                            class="selected-methods"
+                            aria-live="polite"
+                        ></div>
+
+                        <p
+                            id="manufacturing-method-error"
+                            class="field-error"
+                            hidden
+                        >
+                            Select at least one manufacturing method.
+                        </p>
+                    </div>
+
+                    <!-- Melting point -->
                     <div class="form-group">
                         <label for="material-melting-point">
                             Melting Point
@@ -149,7 +285,8 @@
                         >
                     </div>
 
-                    <div class="form-group full-width">
+                    <!-- Source -->
+                    <div class="form-group">
                         <label for="material-source">
                             Source
                         </label>
@@ -157,17 +294,37 @@
                         <input
                             id="material-source"
                             type="text"
-                            placeholder="Example: Oerlikon Metco datasheet"
+                            placeholder="Example: Oerlikon Metco"
                         >
+                    </div>
+
+                    <!-- Document link -->
+                    <div class="form-group full-width">
+                        <label for="material-document-link">
+                            Document Link
+                        </label>
+
+                        <input
+                            id="material-document-link"
+                            type="url"
+                            placeholder="Example: https://example.com/material-datasheet.pdf"
+                        >
+
+                        <p class="selection-instructions">
+                            Add a link to the material datasheet, report, or
+                            supplier document.
+                        </p>
                     </div>
 
                 </div>
 
+                <!-- Form buttons -->
                 <div class="form-buttons">
                     <button id="cancel-button" type="button">
                         Cancel
                     </button>
 
+                    <!-- JavaScript changes this text during editing -->
                     <button id="save-material-button" type="submit">
                         Save Material
                     </button>
@@ -175,31 +332,31 @@
 
             </form>
 
-            <!-- Search box -->
-            <label for="material-search">Search materials</label>
-
-            <input
-                id="material-search"
-                type="search"
-                placeholder="Search by name, category, or composition"
-            >
-
-            <!-- Materials table -->
+            <!-- Current materials table -->
             <div class="table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th>Material Name</th>
-                            <th>Category</th>
-                            <th>Composition</th>
-                            <th>Melting Point</th>
-                            <th>Source</th>
+                            <!-- Three-dot Edit/Delete menu -->
+                            <th
+                                class="actions-column"
+                                scope="col"
+                                aria-label="Material actions"
+                            >
+                                Actions
+                            </th>
+
+                            <th scope="col">Material Name</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Date Added</th>
+                            <th scope="col">Source</th>
+                            <th scope="col">Document Link</th>
                         </tr>
                     </thead>
 
                     <tbody id="materials-table-body">
                         <tr class="empty-row">
-                            <td colspan="5">
+                            <td colspan="6">
                                 No materials have been added yet.
                             </td>
                         </tr>
@@ -207,16 +364,21 @@
                 </table>
             </div>
 
+            <p class="recent-materials-note">
+                Only the five newest materials are displayed on the homepage.
+            </p>
+
         </section>
 
-        <!-- About section -->
+        <!-- About -->
         <section id="about" class="about-section">
             <h2>About the Database</h2>
 
             <p>
-                This database is being developed for the VARCO project
-                to organize material properties, supplier information,
-                and experimental coating results.
+                This database is being developed for the VARCO project to
+                organize material properties, supplier information,
+                manufacturing methods, documents, and experimental coating
+                results.
             </p>
         </section>
 
@@ -226,7 +388,9 @@
         <p>VARCO Materials Database</p>
     </footer>
 
+    <!-- Connects the JavaScript file -->
     <script src="script.js"></script>
+
 </body>
 
 </html>

@@ -1,3 +1,9 @@
+/* =========================================================
+   VARCO MATERIALS DATABASE
+   Homepage with recent materials and row actions
+   ========================================================= */
+
+
 /* Website colors */
 :root {
     --navy: #071b33;
@@ -9,17 +15,21 @@
     --medium-gray: #d7dee8;
     --dark-gray: #4b5563;
     --text: #172033;
+    --danger: #b42318;
 }
+
 
 /* Apply consistent sizing to every element */
 * {
     box-sizing: border-box;
 }
 
+
 /* Smooth scrolling for navigation links */
 html {
     scroll-behavior: smooth;
 }
+
 
 /* Entire webpage */
 body {
@@ -30,7 +40,17 @@ body {
     line-height: 1.6;
 }
 
-/* Top header */
+
+/* Keep hidden elements hidden */
+[hidden] {
+    display: none !important;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
 .main-header {
     padding: 55px 8%;
     background: linear-gradient(135deg, var(--navy), var(--blue));
@@ -58,7 +78,11 @@ body {
     font-size: 18px;
 }
 
-/* Navigation bar */
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
 .navigation {
     position: sticky;
     top: 0;
@@ -78,17 +102,22 @@ body {
     text-decoration: none;
 }
 
-.navigation a:hover {
+.navigation a:hover,
+.navigation a:focus {
     color: var(--light-blue);
+    outline: none;
 }
 
-/* Main content */
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
 main {
     width: min(1100px, 90%);
     margin: 35px auto;
 }
 
-/* Dashboard, materials, and about sections */
 section {
     scroll-margin-top: 80px;
     margin-bottom: 30px;
@@ -104,7 +133,11 @@ section h2 {
     color: var(--navy);
 }
 
-/* Dashboard cards */
+
+/* =========================================================
+   DASHBOARD CARDS
+   ========================================================= */
+
 .summary-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -131,7 +164,11 @@ section h2 {
     font-size: 32px;
 }
 
-/* Materials section heading */
+
+/* =========================================================
+   CURRENT MATERIALS HEADING
+   ========================================================= */
+
 .section-heading {
     display: flex;
     align-items: center;
@@ -140,12 +177,21 @@ section h2 {
     margin-bottom: 22px;
 }
 
-.section-heading h2,
-.section-heading p {
+.section-heading h2 {
     margin-bottom: 5px;
 }
 
-/* Add Material button */
+.section-heading p {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: var(--dark-gray);
+}
+
+
+/* =========================================================
+   ADD MATERIAL BUTTON
+   ========================================================= */
+
 #add-material-button {
     flex-shrink: 0;
     padding: 11px 18px;
@@ -158,46 +204,249 @@ section h2 {
     cursor: pointer;
 }
 
-#add-material-button:hover {
+#add-material-button:hover,
+#add-material-button:focus {
     background-color: var(--navy);
+    outline: none;
 }
 
-/* Search label */
-label {
+
+/* =========================================================
+   ADD AND EDIT MATERIAL FORM
+   ========================================================= */
+
+.material-form {
+    margin-bottom: 28px;
+    padding: 24px;
+    background-color: #f8fafc;
+    border: 1px solid var(--medium-gray);
+    border-left: 5px solid var(--light-blue);
+    border-radius: 6px;
+}
+
+.material-form[hidden] {
+    display: none;
+}
+
+
+/* Form title and close button */
+.form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.form-header h3 {
+    margin: 0;
+    color: var(--navy);
+    font-size: 22px;
+}
+
+#close-form-button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--dark-gray);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+#close-form-button:hover,
+#close-form-button:focus {
+    background-color: #e5e7eb;
+    color: var(--navy);
+    outline: none;
+}
+
+
+/* Arrange form fields into two columns */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+
+/* Form labels */
+.form-group label {
     display: block;
     margin-bottom: 7px;
     color: var(--navy);
     font-weight: bold;
 }
 
-/* Search box */
-#material-search {
+
+/* Form inputs and menus */
+.form-group input,
+.form-group select {
     width: 100%;
-    margin-bottom: 22px;
-    padding: 12px 14px;
+    min-height: 45px;
+    padding: 11px 12px;
     border: 1px solid #aeb8c6;
     border-radius: 5px;
     background-color: var(--white);
+    color: var(--text);
+    font-family: inherit;
     font-size: 16px;
 }
 
-#material-search:focus {
+.form-group input:focus,
+.form-group select:focus {
     border-color: var(--light-blue);
     outline: 3px solid rgba(54, 169, 225, 0.18);
 }
 
-/* Table container */
+
+/* =========================================================
+   MULTIPLE MANUFACTURING METHODS
+   ========================================================= */
+
+.selection-instructions {
+    margin: 7px 0 0;
+    color: var(--dark-gray);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.selected-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.selected-methods:not(:empty) {
+    min-height: 36px;
+    padding: 8px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 5px;
+    background-color: #eaf5fb;
+}
+
+.method-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    padding: 6px 8px 6px 11px;
+    border: 1px solid #9fcfe5;
+    border-radius: 20px;
+    background-color: var(--white);
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.remove-method-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: #d8edf7;
+    color: var(--navy);
+    font-size: 17px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.remove-method-button:hover,
+.remove-method-button:focus {
+    background-color: var(--danger);
+    color: var(--white);
+    outline: none;
+}
+
+.field-error {
+    margin: 8px 0 0;
+    color: var(--danger);
+    font-size: 13px;
+    font-weight: bold;
+}
+
+
+/* =========================================================
+   FORM BUTTONS
+   ========================================================= */
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+#cancel-button,
+#save-material-button {
+    padding: 11px 18px;
+    border-radius: 5px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#cancel-button {
+    border: 1px solid #aeb8c6;
+    background-color: var(--white);
+    color: var(--navy);
+}
+
+#cancel-button:hover,
+#cancel-button:focus {
+    background-color: #e5e7eb;
+    outline: none;
+}
+
+#save-material-button {
+    border: none;
+    background-color: var(--blue);
+    color: var(--white);
+}
+
+#save-material-button:hover,
+#save-material-button:focus {
+    background-color: var(--navy);
+    outline: none;
+}
+
+
+/* =========================================================
+   CURRENT MATERIALS TABLE
+   ========================================================= */
+
 .table-container {
     width: 100%;
     overflow-x: auto;
+    overflow-y: visible;
     border: 1px solid var(--medium-gray);
     border-radius: 5px;
 }
 
-/* Materials table */
 table {
     width: 100%;
-    min-width: 750px;
+    min-width: 850px;
     border-collapse: collapse;
 }
 
@@ -206,19 +455,25 @@ td {
     padding: 14px 16px;
     border-bottom: 1px solid var(--medium-gray);
     text-align: left;
+    vertical-align: middle;
 }
 
 th {
     background-color: var(--navy);
     color: var(--white);
     font-size: 14px;
+    white-space: nowrap;
+}
+
+td {
+    overflow-wrap: anywhere;
 }
 
 tbody tr:nth-child(even) {
     background-color: #f8fafc;
 }
 
-tbody tr:hover {
+tbody tr:not(.empty-row):hover {
     background-color: #eaf5fb;
 }
 
@@ -232,7 +487,158 @@ tbody tr:last-child td {
     text-align: center;
 }
 
-/* Footer */
+
+/* =========================================================
+   THREE-DOT ACTION MENU
+   ========================================================= */
+
+/* Narrow first table column */
+.actions-column {
+    width: 80px;
+    text-align: center;
+}
+
+
+/* Container for each row's menu */
+.actions-menu {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+
+/* Three-dot button */
+.actions-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--navy);
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.actions-menu-button:hover,
+.actions-menu-button:focus,
+.actions-menu-button[aria-expanded="true"] {
+    border-color: #b8dcea;
+    background-color: #dff1f8;
+    outline: none;
+}
+
+
+/* Edit/Delete menu */
+.actions-dropdown {
+    position: absolute;
+    top: 42px;
+    left: 50%;
+    z-index: 100;
+    min-width: 130px;
+    padding: 6px;
+    border: 1px solid var(--medium-gray);
+    border-radius: 6px;
+    background-color: var(--white);
+    box-shadow: 0 8px 22px rgba(7, 27, 51, 0.2);
+    transform: translateX(-20%);
+}
+
+
+/* Menu buttons */
+.actions-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.actions-dropdown button:hover,
+.actions-dropdown button:focus {
+    background-color: #eaf5fb;
+    outline: none;
+}
+
+
+/* Delete option */
+.actions-dropdown .delete-material-button {
+    color: var(--danger);
+    font-weight: bold;
+}
+
+.actions-dropdown .delete-material-button:hover,
+.actions-dropdown .delete-material-button:focus {
+    background-color: #fef3f2;
+}
+
+
+/* =========================================================
+   MATERIAL NAME AND DOCUMENT LINKS
+   ========================================================= */
+
+/* Clickable material name */
+.material-name-link {
+    color: var(--blue);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.material-name-link:hover,
+.material-name-link:focus {
+    color: var(--light-blue);
+    text-decoration: underline;
+    outline: none;
+}
+
+
+/* Document link */
+.document-link {
+    display: inline-block;
+    color: var(--blue);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.document-link:hover,
+.document-link:focus {
+    color: var(--light-blue);
+    text-decoration: underline;
+    outline: none;
+}
+
+
+/* Used if there is no document link */
+.no-document {
+    color: var(--dark-gray);
+    font-style: italic;
+}
+
+
+/* Message underneath the recent-materials table */
+.recent-materials-note {
+    margin: 14px 0 0;
+    color: var(--dark-gray);
+    font-size: 13px;
+    font-style: italic;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
 footer {
     padding: 22px;
     background-color: var(--navy);
@@ -244,7 +650,11 @@ footer p {
     margin: 0;
 }
 
-/* Phone and small-screen layout */
+
+/* =========================================================
+   PHONE AND SMALL-SCREEN LAYOUT
+   ========================================================= */
+
 @media (max-width: 700px) {
     .main-header {
         padding: 40px 5%;
@@ -277,130 +687,7 @@ footer p {
     #add-material-button {
         width: 100%;
     }
-}
 
-
-
-/* Add Material form */
-.material-form {
-    margin-bottom: 28px;
-    padding: 24px;
-    background-color: #f8fafc;
-    border: 1px solid var(--medium-gray);
-    border-left: 5px solid var(--light-blue);
-    border-radius: 6px;
-}
-
-/* Completely hides the form until Add Material is clicked */
-.material-form[hidden] {
-    display: none;
-}
-
-/* Form title and close button */
-.form-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
-.form-header h3 {
-    margin: 0;
-    color: var(--navy);
-    font-size: 22px;
-}
-
-#close-form-button {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border: none;
-    border-radius: 50%;
-    background-color: transparent;
-    color: var(--dark-gray);
-    font-size: 28px;
-    line-height: 1;
-    cursor: pointer;
-}
-
-#close-form-button:hover {
-    background-color: #e5e7eb;
-    color: var(--navy);
-}
-
-/* Arrange form fields into two columns */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-/* Form inputs and category menu */
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 11px 12px;
-    border: 1px solid #aeb8c6;
-    border-radius: 5px;
-    background-color: var(--white);
-    color: var(--text);
-    font-size: 16px;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: var(--light-blue);
-    outline: 3px solid rgba(54, 169, 225, 0.18);
-}
-
-/* Cancel and Save buttons */
-.form-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 22px;
-}
-
-#cancel-button,
-#save-material-button {
-    padding: 11px 18px;
-    border-radius: 5px;
-    font-size: 15px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-#cancel-button {
-    border: 1px solid #aeb8c6;
-    background-color: var(--white);
-    color: var(--navy);
-}
-
-#cancel-button:hover {
-    background-color: #e5e7eb;
-}
-
-#save-material-button {
-    border: none;
-    background-color: var(--blue);
-    color: var(--white);
-}
-
-#save-material-button:hover {
-    background-color: var(--navy);
-}
-
-/* Form layout on phones */
-@media (max-width: 700px) {
     .material-form {
         padding: 18px;
     }
@@ -420,5 +707,14 @@ footer p {
     #cancel-button,
     #save-material-button {
         width: 100%;
+    }
+
+    .method-tag {
+        max-width: 100%;
+    }
+
+    .actions-dropdown {
+        left: 0;
+        transform: none;
     }
 }
