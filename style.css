@@ -1052,3 +1052,40 @@ footer p {
         animation-iteration-count: 1 !important;
     }
 }
+
+/* Current Materials compact filter layout */
+.catalog-main .catalog-filters {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px 16px;
+    width: 100%;
+    margin-top: 14px;
+}
+
+.catalog-main .catalog-filters > .catalog-search {
+    grid-column: 1 / -1 !important;
+}
+
+.catalog-main .catalog-filters > .form-group {
+    width: auto !important;
+    min-width: 0;
+    margin: 0;
+}
+
+.catalog-main .catalog-filters input,
+.catalog-main .catalog-filters select {
+    display: block;
+    width: 100%;
+    height: 38px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 650px) {
+    .catalog-main .catalog-filters {
+        grid-template-columns: 1fr !important;
+    }
+
+    .catalog-main .catalog-filters > .catalog-search {
+        grid-column: 1 !important;
+    }
+}

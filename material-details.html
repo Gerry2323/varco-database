@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ======================================================
+         BASIC PAGE SETTINGS
+         ====================================================== -->
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Complete material record in the VARCO Materials Database."
+    >
+
+    <title>Material Details | VARCO Materials Database</title>
+
+
+    <!-- ======================================================
+         WEBSITE STYLESHEETS
+
+         style.css contains the shared website design.
+         material-details.css will contain styles for this page.
+         ====================================================== -->
+
+    <link rel="stylesheet" href="style.css?v=4">
+
+    <link
+        rel="stylesheet"
+        href="material-details.css?v=1"
+    >
+</head>
+
+
+<body>
+
+    <!-- ======================================================
+         WEBSITE HEADER
+         ====================================================== -->
+
+    <header class="main-header">
+    <p class="project-label">NASA Materials Research Project</p>
+
+    <h1>VARCO Materials Database</h1>
+
+    <p class="subtitle">
+        Lunar regolith, ceramic coatings, substrates, and test data
+    </p>
+</header>
+
+<nav class="navigation" aria-label="Main navigation">
+    <a href="index.html">Dashboard</a>
+    <a href="current-materials.html">Current Materials</a>
+    <a href="materials.html">Material Selector</a>
+    <a href="ashby.html">Ashby Charts</a>
+    <a href="csv-files.html">CSV Files</a>
+    <a href="index.html#about">About</a>
+</nav>
+
+
+
+
+    <!-- ======================================================
+         MAIN MATERIAL-DETAIL PAGE
+         ====================================================== -->
+
+    <main class="material-details-main">
+
+        <!-- ==================================================
+             BACK BUTTON AND PAGE ACTIONS
+             ================================================== -->
+
+        <section
+            class="detail-toolbar"
+            aria-label="Material actions"
+        >
+            <a
+                class="secondary-button back-button"
+                href="current-materials.html"
+            >
+                ← Back to Current Materials
+            </a>
+
+            <div class="detail-action-buttons">
+
+                <button
+                    id="add-to-comparison-button"
+                    class="primary-button"
+                    type="button"
+                >
+                    Add to Comparison
+                </button>
+
+                <button
+                    id="edit-material-button"
+                    class="secondary-button"
+                    type="button"
+                >
+                    Edit Material
+                </button>
+
+            </div>
+        </section>
+
+
+        <!-- ==================================================
+             LOADING AND ERROR MESSAGE
+
+             JavaScript changes this message while it searches
+             for the selected material.
+             ================================================== -->
+
+        <div
+            id="material-detail-status"
+            class="detail-status"
+            role="status"
+            aria-live="polite"
+        >
+            Loading material details...
+        </div>
+
+
+        <!-- ==================================================
+             MATERIAL CONTENT
+
+             This section starts hidden. material-details.js
+             displays it after finding the selected material.
+             ================================================== -->
+
+        <article
+            id="material-detail-content"
+            class="material-detail-content"
+            hidden
+        >
+
+            <!-- ==============================================
+                 MATERIAL TITLE
+                 ============================================== -->
+
+            <section class="material-detail-header">
+
+                <div>
+                    <p
+                        id="detail-category-label"
+                        class="detail-category-label"
+                    >
+                        Material
+                    </p>
+
+                    <h2 id="detail-material-name">
+                        Material Name
+                    </h2>
+
+                    <p
+                        id="detail-product-name"
+                        class="detail-product-name"
+                    >
+                        Product name not reported
+                    </p>
+                </div>
+
+
+                <!-- Data-quality badge -->
+                <span
+                    id="detail-quality-badge"
+                    class="quality-badge"
+                >
+                    Quality not reported
+                </span>
+
+            </section>
+
+
+            <!-- ==============================================
+                 QUICK RECORD SUMMARY
+                 ============================================== -->
+
+            <section
+                class="detail-summary-grid"
+                aria-label="Material summary"
+            >
+
+                <div class="summary-item">
+                    <span class="detail-label">
+                        Category
+                    </span>
+
+                    <span id="detail-category">
+                        Not reported
+                    </span>
+                </div>
+
+
+                <div class="summary-item">
+                    <span class="detail-label">
+                        Feedstock Form
+                    </span>
+
+                    <span id="detail-feedstock-form">
+                        Not reported
+                    </span>
+                </div>
+
+
+                <div class="summary-item">
+                    <span class="detail-label">
+                        Supplier
+                    </span>
+
+                    <span id="detail-supplier">
+                        Not reported
+                    </span>
+                </div>
+
+
+                <div class="summary-item">
+                    <span class="detail-label">
+                        Record Origin
+                    </span>
+
+                    <span id="detail-origin">
+                        Not reported
+                    </span>
+                </div>
+
+            </section>
+
+
+            <!-- ==============================================
+                 COMPOSITION INFORMATION
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Composition</h3>
+
+                    <p>
+                        Chemical composition and the basis used
+                        for the reported values.
+                    </p>
+                </div>
+
+
+                <dl class="detail-property-grid">
+
+                    <div class="detail-property">
+                        <dt>Composition as Reported</dt>
+
+                        <dd id="detail-composition">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Composition Basis</dt>
+
+                        <dd id="detail-composition-basis">
+                            Not reported
+                        </dd>
+                    </div>
+
+                </dl>
+            </section>
+
+
+            <!-- ==============================================
+                 MANUFACTURING AND FEEDSTOCK
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Manufacturing and Feedstock</h3>
+
+                    <p>
+                        Feedstock production method, physical
+                        form, and particle-size information.
+                    </p>
+                </div>
+
+
+                <dl class="detail-property-grid">
+
+                    <div class="detail-property">
+                        <dt>Manufacturing Method</dt>
+
+                        <dd id="detail-manufacturing-methods">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Feedstock Form</dt>
+
+                        <dd id="detail-feedstock-form-full">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Minimum Particle Size</dt>
+
+                        <dd id="detail-particle-size-min">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Maximum Particle Size</dt>
+
+                        <dd id="detail-particle-size-max">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Average Particle Size / D50</dt>
+
+                        <dd id="detail-particle-size-average">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Particle Morphology</dt>
+
+                        <dd id="detail-morphology">
+                            Not reported
+                        </dd>
+                    </div>
+
+                </dl>
+            </section>
+
+
+            <!-- ==============================================
+                 MATERIAL PROPERTIES
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Material Properties</h3>
+
+                    <p>
+                        Reported physical, thermal, and mechanical
+                        properties.
+                    </p>
+                </div>
+
+
+                <dl class="detail-property-grid">
+
+                    <div class="detail-property">
+                        <dt>Density</dt>
+
+                        <dd id="detail-density">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Hardness</dt>
+
+                        <dd id="detail-hardness">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Young’s Modulus</dt>
+
+                        <dd id="detail-youngs-modulus">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Melting Point</dt>
+
+                        <dd id="detail-melting-point">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Thermal Conductivity</dt>
+
+                        <dd id="detail-thermal-conductivity">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Coefficient of Thermal Expansion</dt>
+
+                        <dd id="detail-thermal-expansion">
+                            Not reported
+                        </dd>
+                    </div>
+
+                </dl>
+            </section>
+
+
+            <!-- ==============================================
+                 SPRAY-PROCESS INFORMATION
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Thermal Spray Information</h3>
+
+                    <p>
+                        Recommended processes and available
+                        coating or testing information.
+                    </p>
+                </div>
+
+
+                <dl class="detail-property-grid">
+
+                    <div class="detail-property">
+                        <dt>Recommended Spray Processes</dt>
+
+                        <dd id="detail-spray-processes">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Substrate</dt>
+
+                        <dd id="detail-substrate">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Coating Thickness</dt>
+
+                        <dd id="detail-coating-thickness">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Surface Preparation</dt>
+
+                        <dd id="detail-surface-preparation">
+                            Not reported
+                        </dd>
+                    </div>
+
+                </dl>
+            </section>
+
+
+            <!-- ==============================================
+                 SUPPLIER INFORMATION
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Supplier Information</h3>
+                </div>
+
+
+                <dl class="detail-property-grid">
+
+                    <div class="detail-property">
+                        <dt>Supplier or Manufacturer</dt>
+
+                        <dd id="detail-supplier-full">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Product Name</dt>
+
+                        <dd id="detail-product-name-full">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Product Number</dt>
+
+                        <dd id="detail-product-number">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Country of Origin</dt>
+
+                        <dd id="detail-country">
+                            Not reported
+                        </dd>
+                    </div>
+
+                </dl>
+            </section>
+
+
+            <!-- ==============================================
+                 STANDARDS
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Standards and Test Methods</h3>
+
+                    <p>
+                        Standards connected to the material,
+                        coating, or reported test results.
+                    </p>
+                </div>
+
+                <div id="detail-standards">
+                    <p>Not reported</p>
+                </div>
+            </section>
+
+
+            <!-- ==============================================
+                 SOURCE AND RECORD INFORMATION
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Source and Record Information</h3>
+                </div>
+
+
+                <dl class="detail-property-grid">
+
+                    <div class="detail-property">
+                        <dt>Source Type</dt>
+
+                        <dd id="detail-source-type">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Source Title</dt>
+
+                        <dd id="detail-source-title">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Source Filename</dt>
+
+                        <dd id="detail-source-filename">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property">
+                        <dt>Date Added</dt>
+
+                        <dd id="detail-date-added">
+                            Not reported
+                        </dd>
+                    </div>
+
+
+                    <div class="detail-property detail-property-wide">
+                        <dt>Document Link</dt>
+
+                        <dd id="detail-document-link">
+                            Not reported
+                        </dd>
+                    </div>
+
+                </dl>
+            </section>
+
+
+            <!-- ==============================================
+                 NOTES
+                 ============================================== -->
+
+            <section class="detail-card">
+                <div class="detail-card-heading">
+                    <h3>Research Notes</h3>
+                </div>
+
+                <p id="detail-notes">
+                    No notes have been added.
+                </p>
+            </section>
+
+        </article>
+
+
+        <!-- ==================================================
+             JAVASCRIPT-DISABLED MESSAGE
+             ================================================== -->
+
+        <noscript>
+            <div class="detail-error">
+                JavaScript must be enabled to load material
+                information.
+            </div>
+        </noscript>
+
+    </main>
+
+
+    <!-- ======================================================
+         WEBSITE FOOTER
+         ====================================================== -->
+
+    <footer class="site-footer">
+        <p>
+            VARCO Materials Database
+        </p>
+    </footer>
+
+
+    <!-- ======================================================
+         MATERIAL-DETAIL JAVASCRIPT
+
+         This file reads the material ID from the URL and fills
+         all the detail fields above.
+         ====================================================== -->
+
+    <script src="material-details.js?v=1"></script>
+
+</body>
+</html>

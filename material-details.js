@@ -1,0 +1,1502 @@
+"use strict";
+
+
+/* =========================================================
+   MATERIAL DETAILS PAGE
+   File: material-details.js
+
+   This file:
+   1. Reads the selected material ID from the URL.
+   2. Loads manual materials from localStorage.
+   3. Loads spreadsheet materials from IndexedDB.
+   4. Finds the selected record.
+   5. Displays its information on the page.
+   ========================================================= */
+
+
+/* =========================================================
+   COLUMN-NAME ALIASES
+
+   These aliases help the database recognize different column
+   headings used in uploaded spreadsheets.
+   ========================================================= */
+
+const FIELD_ALIASES = {
+    name: [
+        "material name",
+        "material",
+        "name"
+    ],
+
+    category: [
+        "category",
+        "material category",
+        "material type"
+    ],
+
+    composition: [
+        "composition as reported",
+        "composition",
+        "chemical composition"
+    ],
+
+    compositionBasis: [
+        "composition basis",
+        "basis"
+    ],
+
+    manufacturingMethods: [
+        "manufacturing method",
+        "manufacturing methods",
+        "production method"
+    ],
+
+    feedstockForm: [
+        "feedstock form",
+        "material form",
+        "form"
+    ],
+
+    particleSizeMin: [
+        "particle size min",
+        "minimum particle size",
+        "min particle size"
+    ],
+
+    particleSizeMax: [
+        "particle size max",
+        "maximum particle size",
+        "max particle size"
+    ],
+
+    particleSizeAverage: [
+        "particle size average",
+        "average particle size",
+        "d50",
+        "particle size d50"
+    ],
+
+    morphology: [
+        "particle morphology",
+        "morphology"
+    ],
+
+    supplier: [
+        "supplier",
+        "manufacturer",
+        "supplier or manufacturer"
+    ],
+
+    productName: [
+        "product name",
+        "trade name"
+    ],
+
+    productNumber: [
+        "product number",
+        "product id",
+        "product code"
+    ],
+
+    country: [
+        "country of origin",
+        "country"
+    ],
+
+    density: [
+        "density"
+    ],
+
+    hardness: [
+        "hardness"
+    ],
+
+    youngsModulus: [
+        "young's modulus",
+        "youngs modulus",
+        "elastic modulus"
+    ],
+
+    meltingPoint: [
+        "melting point",
+        "melting temperature"
+    ],
+
+    thermalConductivity: [
+        "thermal conductivity"
+    ],
+
+    thermalExpansion: [
+        "coefficient of thermal expansion",
+        "thermal expansion",
+        "cte"
+    ],
+
+    sprayProcesses: [
+        "recommended spray processes",
+        "recommended spray process",
+        "spray processes",
+        "spray process"
+    ],
+
+    substrate: [
+        "substrate",
+        "substrate material"
+    ],
+
+    coatingThickness: [
+        "coating thickness",
+        "thickness"
+    ],
+
+    surfacePreparation: [
+        "surface preparation",
+        "surface prep"
+    ],
+
+    standards: [
+        "standards",
+        "standard",
+        "test standards",
+        "test methods"
+    ],
+
+    dataQualityStatus: [
+        "data quality status",
+        "data quality",
+        "quality status"
+    ],
+
+    sourceType: [
+        "source type"
+    ],
+
+    sourceTitle: [
+        "source title",
+        "article title",
+        "reference"
+    ],
+
+    sourceFilename: [
+        "source filename",
+        "filename",
+        "file name"
+    ],
+
+    documentLink: [
+        "document link",
+        "source link",
+        "url",
+        "link"
+    ],
+
+    dateAdded: [
+        "date added",
+        "added"
+    ],
+
+    notes: [
+        "research notes",
+        "notes",
+        "comments"
+    ]
+};
+
+
+/* =========================================================
+   PAGE ELEMENTS
+   ========================================================= */
+
+const elements = {
+    status: document.getElementById(
+        "material-detail-status"
+    ),
+
+    content: document.getElementById(
+        "material-detail-content"
+    ),
+
+    addToComparisonButton: document.getElementById(
+        "add-to-comparison-button"
+    ),
+
+    editButton: document.getElementById(
+        "edit-material-button"
+    )
+};
+
+
+/* =========================================================
+   BASIC DATA HELPERS
+   ========================================================= */
+
+/*
+   Returns a clean text value.
+
+   Empty, null, and undefined values become an empty string.
+*/
+function clean(value) {
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+    return String(value).trim();
+}
+
+
+/*
+   Creates a normalized version of a spreadsheet heading.
+
+   Example:
+   "Particle Size (µm)" becomes "particle size".
+*/
+function normalizeHeading(value) {
+    return clean(value)
+        .toLowerCase()
+        .replace(/[_-]+/g, " ")
+        .replace(/\([^)]*\)/g, " ")
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+
+/*
+   Converts a value containing several items into an array.
+
+   Recognized separators:
+   - Commas
+   - Semicolons
+   - Vertical bars
+   - Line breaks
+*/
+function list(value) {
+    if (Array.isArray(value)) {
+        return value
+            .map(clean)
+            .filter(Boolean);
+    }
+
+    const text = clean(value);
+
+    if (!text) {
+        return [];
+    }
+
+    return text
+        .split(/[,;|\n]+/)
+        .map(clean)
+        .filter(Boolean);
+}
+
+
+/*
+   Returns the first matching value from an object.
+
+   This allows older manual records to use slightly different
+   property names without breaking the Material Details page.
+*/
+function firstValue(record, propertyNames) {
+    for (const propertyName of propertyNames) {
+        const value = record[propertyName];
+
+        if (
+            Array.isArray(value) &&
+            value.length
+        ) {
+            return value;
+        }
+
+        if (clean(value)) {
+            return value;
+        }
+    }
+
+    return "";
+}
+
+
+/* =========================================================
+   READ A VALUE FROM A SPREADSHEET ROW
+   ========================================================= */
+
+function valueFromRow(headers, row, fieldName) {
+    const acceptedHeadings =
+        FIELD_ALIASES[fieldName] || [];
+
+    const normalizedAliases =
+        acceptedHeadings.map(normalizeHeading);
+
+    const columnIndex = headers.findIndex(
+        (heading) =>
+            normalizedAliases.includes(
+                normalizeHeading(heading)
+            )
+    );
+
+    if (columnIndex === -1) {
+        return "";
+    }
+
+    return clean(row[columnIndex]);
+}
+
+
+/* =========================================================
+   STANDARDIZE ONE MATERIAL RECORD
+
+   Both manual records and spreadsheet records pass through this
+   function so that the detail page uses consistent field names.
+   ========================================================= */
+
+function standardizeMaterial(record, id, origin) {
+    return {
+        ...record,
+
+        id: id,
+
+        origin: origin,
+
+        name: firstValue(
+            record,
+            ["name", "materialName"]
+        ),
+
+        category: firstValue(
+            record,
+            ["category", "materialCategory"]
+        ),
+
+        composition: firstValue(
+            record,
+            [
+                "composition",
+                "compositionReported",
+                "compositionAsReported"
+            ]
+        ),
+
+        compositionBasis: firstValue(
+            record,
+            ["compositionBasis", "basis"]
+        ),
+
+        manufacturingMethods: list(
+            firstValue(
+                record,
+                [
+                    "manufacturingMethods",
+                    "manufacturingMethod"
+                ]
+            )
+        ),
+
+        feedstockForm: firstValue(
+            record,
+            ["feedstockForm", "form"]
+        ),
+
+        particleSizeMin: firstValue(
+            record,
+            [
+                "particleSizeMin",
+                "minimumParticleSize"
+            ]
+        ),
+
+        particleSizeMax: firstValue(
+            record,
+            [
+                "particleSizeMax",
+                "maximumParticleSize"
+            ]
+        ),
+
+        particleSizeAverage: firstValue(
+            record,
+            [
+                "particleSizeAverage",
+                "averageParticleSize",
+                "d50"
+            ]
+        ),
+
+        morphology: firstValue(
+            record,
+            ["morphology", "particleMorphology"]
+        ),
+
+        supplier: firstValue(
+            record,
+            ["supplier", "manufacturer"]
+        ),
+
+        productName: firstValue(
+            record,
+            ["productName", "tradeName"]
+        ),
+
+        productNumber: firstValue(
+            record,
+            [
+                "productNumber",
+                "productCode",
+                "productId"
+            ]
+        ),
+
+        country: firstValue(
+            record,
+            ["country", "countryOfOrigin"]
+        ),
+
+        density: firstValue(
+            record,
+            ["density"]
+        ),
+
+        hardness: firstValue(
+            record,
+            ["hardness"]
+        ),
+
+        youngsModulus: firstValue(
+            record,
+            [
+                "youngsModulus",
+                "youngModulus",
+                "elasticModulus"
+            ]
+        ),
+
+        meltingPoint: firstValue(
+            record,
+            ["meltingPoint"]
+        ),
+
+        thermalConductivity: firstValue(
+            record,
+            ["thermalConductivity"]
+        ),
+
+        thermalExpansion: firstValue(
+            record,
+            [
+                "thermalExpansion",
+                "coefficientOfThermalExpansion",
+                "cte"
+            ]
+        ),
+
+        sprayProcesses: list(
+            firstValue(
+                record,
+                [
+                    "sprayProcesses",
+                    "recommendedSprayProcesses",
+                    "sprayProcess"
+                ]
+            )
+        ),
+
+        substrate: firstValue(
+            record,
+            ["substrate"]
+        ),
+
+        coatingThickness: firstValue(
+            record,
+            ["coatingThickness"]
+        ),
+
+        surfacePreparation: firstValue(
+            record,
+            ["surfacePreparation"]
+        ),
+
+        standards: firstValue(
+            record,
+            [
+                "standards",
+                "testStandards",
+                "testMethods"
+            ]
+        ),
+
+        dataQualityStatus: firstValue(
+            record,
+            [
+                "dataQualityStatus",
+                "dataQuality",
+                "qualityStatus"
+            ]
+        ),
+
+        sourceType: firstValue(
+            record,
+            ["sourceType"]
+        ),
+
+        sourceTitle: firstValue(
+            record,
+            [
+                "sourceTitle",
+                "articleTitle",
+                "reference"
+            ]
+        ),
+
+        sourceFilename: firstValue(
+            record,
+            ["sourceFilename", "filename"]
+        ),
+
+        documentLink: firstValue(
+            record,
+            [
+                "documentLink",
+                "sourceLink",
+                "url"
+            ]
+        ),
+
+        dateAdded: firstValue(
+            record,
+            ["dateAdded", "date"]
+        ),
+
+        notes: firstValue(
+            record,
+            ["notes", "researchNotes", "comments"]
+        )
+    };
+}
+
+
+/* =========================================================
+   LOAD MANUAL MATERIALS FROM LOCALSTORAGE
+   ========================================================= */
+
+function manualMaterials() {
+    try {
+        const savedValue =
+            localStorage.getItem("varcoMaterials");
+
+        const records =
+            savedValue
+                ? JSON.parse(savedValue)
+                : [];
+
+        if (!Array.isArray(records)) {
+            return [];
+        }
+
+        return records.map((record, index) => {
+            /*
+               Use the existing ID when available.
+
+               Otherwise, create the same ID format used by the
+               Current Materials page.
+            */
+            const id =
+                clean(record.id) ||
+                `manual:${index}`;
+
+            return standardizeMaterial(
+                record,
+                id,
+                "manual"
+            );
+        });
+    } catch (error) {
+        console.error(
+            "Manual materials could not be read.",
+            error
+        );
+
+        return [];
+    }
+}
+
+
+/* =========================================================
+   CONVERT ONE SPREADSHEET ROW INTO A MATERIAL
+   ========================================================= */
+
+function materialFromSpreadsheetRow(
+    file,
+    headers,
+    row,
+    rowNumber
+) {
+    const record = {};
+
+    Object.keys(FIELD_ALIASES).forEach(
+        (fieldName) => {
+            record[fieldName] = valueFromRow(
+                headers,
+                row,
+                fieldName
+            );
+        }
+    );
+
+    /*
+       Rows without a material name are not material records.
+    */
+    if (!record.name) {
+        return null;
+    }
+
+    record.manufacturingMethods =
+        list(record.manufacturingMethods);
+
+    record.sprayProcesses =
+        list(record.sprayProcesses);
+
+    /*
+       Use the uploaded file as the source when no more specific
+       source information was included in the row.
+    */
+    if (!record.sourceTitle) {
+        record.sourceTitle =
+            clean(file.name) ||
+            "Uploaded spreadsheet";
+    }
+
+    if (!record.sourceFilename) {
+        record.sourceFilename =
+            clean(file.name);
+    }
+
+    if (!record.dateAdded) {
+        record.dateAdded =
+            clean(file.dateAdded);
+    }
+
+    const fileId =
+        clean(file.id) ||
+        clean(file.name) ||
+        "spreadsheet";
+
+    const id =
+        `csv:${fileId}:${rowNumber}`;
+
+    return standardizeMaterial(
+        record,
+        id,
+        "csv"
+    );
+}
+
+
+/* =========================================================
+   READ TABLES FROM ONE UPLOADED FILE
+
+   This supports:
+   - file.rows
+   - file.data
+   - Multiple worksheet objects stored in file.sheets
+   ========================================================= */
+
+function spreadsheetTables(file) {
+    const tables = [];
+
+    if (
+        Array.isArray(file.rows) &&
+        file.rows.length
+    ) {
+        tables.push(file.rows);
+    }
+
+    if (
+        Array.isArray(file.data) &&
+        file.data.length
+    ) {
+        tables.push(file.data);
+    }
+
+    if (Array.isArray(file.sheets)) {
+        file.sheets.forEach((sheet) => {
+            const rows =
+                sheet.rows ||
+                sheet.data;
+
+            if (
+                Array.isArray(rows) &&
+                rows.length
+            ) {
+                tables.push(rows);
+            }
+        });
+    } else if (
+        file.sheets &&
+        typeof file.sheets === "object"
+    ) {
+        Object.values(file.sheets).forEach(
+            (sheet) => {
+                const rows =
+                    Array.isArray(sheet)
+                        ? sheet
+                        : sheet.rows || sheet.data;
+
+                if (
+                    Array.isArray(rows) &&
+                    rows.length
+                ) {
+                    tables.push(rows);
+                }
+            }
+        );
+    }
+
+    return tables;
+}
+
+
+/* =========================================================
+   CONVERT ONE UPLOADED FILE INTO MATERIAL RECORDS
+   ========================================================= */
+
+function materialsFromFile(file) {
+    const records = [];
+    let materialNumber = 1;
+
+    spreadsheetTables(file).forEach((rows) => {
+        /*
+           A table requires one heading row and at least one
+           material row.
+        */
+        if (rows.length < 2) {
+            return;
+        }
+
+        const headers = rows[0];
+
+        rows.slice(1).forEach((row) => {
+            const material =
+                materialFromSpreadsheetRow(
+                    file,
+                    headers,
+                    row,
+                    materialNumber
+                );
+
+            if (material) {
+                records.push(material);
+                materialNumber += 1;
+            }
+        });
+    });
+
+    return records;
+}
+
+
+/* =========================================================
+   READ ALL RECORDS FROM ONE INDEXEDDB OBJECT STORE
+   ========================================================= */
+
+function readObjectStore(
+    database,
+    storeName
+) {
+    return new Promise((resolve) => {
+        try {
+            const transaction =
+                database.transaction(
+                    storeName,
+                    "readonly"
+                );
+
+            const store =
+                transaction.objectStore(storeName);
+
+            const request =
+                store.getAll();
+
+            request.onsuccess = () => {
+                resolve(request.result || []);
+            };
+
+            request.onerror = () => {
+                resolve([]);
+            };
+        } catch (error) {
+            resolve([]);
+        }
+    });
+}
+
+
+/* =========================================================
+   OPEN ONE INDEXEDDB DATABASE
+   ========================================================= */
+
+function openDatabase(databaseName) {
+    return new Promise((resolve) => {
+        const request =
+            indexedDB.open(databaseName);
+
+        request.onsuccess = () => {
+            resolve(request.result);
+        };
+
+        request.onerror = () => {
+            resolve(null);
+        };
+
+        request.onupgradeneeded = () => {
+            /*
+               Do not create or modify a database while searching
+               for uploaded spreadsheet records.
+            */
+            request.transaction.abort();
+        };
+    });
+}
+
+
+/* =========================================================
+   LOAD SPREADSHEET MATERIALS FROM INDEXEDDB
+
+   Modern Chrome can list the databases created by the website.
+   The code searches their object stores for uploaded file
+   records containing rows or worksheets.
+   ========================================================= */
+
+async function spreadsheetMaterials() {
+    if (
+        !window.indexedDB ||
+        typeof indexedDB.databases !== "function"
+    ) {
+        console.warn(
+            "Automatic spreadsheet database discovery is not supported."
+        );
+
+        return [];
+    }
+
+    try {
+        const databaseInformation =
+            await indexedDB.databases();
+
+        const allMaterials = [];
+
+        for (const information of databaseInformation) {
+            if (!information.name) {
+                continue;
+            }
+
+            const database =
+                await openDatabase(information.name);
+
+            if (!database) {
+                continue;
+            }
+
+            const storeNames =
+                Array.from(database.objectStoreNames);
+
+            for (const storeName of storeNames) {
+                const records =
+                    await readObjectStore(
+                        database,
+                        storeName
+                    );
+
+                records.forEach((file) => {
+                    if (spreadsheetTables(file).length) {
+                        allMaterials.push(
+                            ...materialsFromFile(file)
+                        );
+                    }
+                });
+            }
+
+            database.close();
+        }
+
+        return allMaterials;
+    } catch (error) {
+        console.error(
+            "Spreadsheet materials could not be read.",
+            error
+        );
+
+        return [];
+    }
+}
+
+
+/* =========================================================
+   PAGE-DISPLAY HELPERS
+   ========================================================= */
+
+/*
+   Places a value inside an element.
+
+   Missing information is displayed as "Not reported."
+*/
+function setText(elementId, value) {
+    const element =
+        document.getElementById(elementId);
+
+    if (!element) {
+        return;
+    }
+
+    const displayValue =
+        Array.isArray(value)
+            ? value.join(", ")
+            : clean(value);
+
+    element.textContent =
+        displayValue ||
+        "Not reported";
+}
+
+
+/*
+   Adds a unit only when the value does not already include one.
+*/
+function withUnit(value, unit) {
+    const text = clean(value);
+
+    if (!text) {
+        return "";
+    }
+
+    if (/[a-zµ°%]/i.test(text)) {
+        return text;
+    }
+
+    return `${text} ${unit}`;
+}
+
+
+/*
+   Displays the material source as a clickable link when a valid
+   web address was provided.
+*/
+function displayDocumentLink(url) {
+    const container =
+        document.getElementById(
+            "detail-document-link"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.replaceChildren();
+
+    const linkValue = clean(url);
+
+    if (!/^https?:\/\//i.test(linkValue)) {
+        container.textContent =
+            linkValue ||
+            "Not reported";
+
+        return;
+    }
+
+    const link =
+        document.createElement("a");
+
+    link.href = linkValue;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Open source document";
+
+    container.appendChild(link);
+}
+
+
+/*
+   Displays standards as a readable list.
+*/
+function displayStandards(value) {
+    const container =
+        document.getElementById(
+            "detail-standards"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.replaceChildren();
+
+    const standards = list(value);
+
+    if (!standards.length) {
+        const message =
+            document.createElement("p");
+
+        message.textContent =
+            "Not reported";
+
+        container.appendChild(message);
+        return;
+    }
+
+    const listElement =
+        document.createElement("ul");
+
+    standards.forEach((standard) => {
+        const item =
+            document.createElement("li");
+
+        item.textContent = standard;
+        listElement.appendChild(item);
+    });
+
+    container.appendChild(listElement);
+}
+
+
+/* =========================================================
+   DISPLAY THE SELECTED MATERIAL
+   ========================================================= */
+
+function displayMaterial(material) {
+    /*
+       Page title and main heading.
+    */
+    document.title =
+        `${material.name} | VARCO Materials Database`;
+
+    setText(
+        "detail-category-label",
+        material.category || "Material"
+    );
+
+    setText(
+        "detail-material-name",
+        material.name || "Unnamed Material"
+    );
+
+    setText(
+        "detail-product-name",
+        material.productName ||
+            "Product name not reported"
+    );
+
+    setText(
+        "detail-quality-badge",
+        material.dataQualityStatus ||
+            "Quality not reported"
+    );
+
+
+    /*
+       Quick summary.
+    */
+    setText(
+        "detail-category",
+        material.category
+    );
+
+    setText(
+        "detail-feedstock-form",
+        material.feedstockForm
+    );
+
+    setText(
+        "detail-supplier",
+        material.supplier
+    );
+
+    setText(
+        "detail-origin",
+        material.origin === "csv"
+            ? "Spreadsheet Import"
+            : "Manual Entry"
+    );
+
+
+    /*
+       Composition.
+    */
+    setText(
+        "detail-composition",
+        material.composition
+    );
+
+    setText(
+        "detail-composition-basis",
+        material.compositionBasis
+    );
+
+
+    /*
+       Manufacturing and feedstock.
+    */
+    setText(
+        "detail-manufacturing-methods",
+        material.manufacturingMethods
+    );
+
+    setText(
+        "detail-feedstock-form-full",
+        material.feedstockForm
+    );
+
+    setText(
+        "detail-particle-size-min",
+        withUnit(
+            material.particleSizeMin,
+            "µm"
+        )
+    );
+
+    setText(
+        "detail-particle-size-max",
+        withUnit(
+            material.particleSizeMax,
+            "µm"
+        )
+    );
+
+    setText(
+        "detail-particle-size-average",
+        withUnit(
+            material.particleSizeAverage,
+            "µm"
+        )
+    );
+
+    setText(
+        "detail-morphology",
+        material.morphology
+    );
+
+
+    /*
+       Material properties.
+    */
+    setText(
+        "detail-density",
+        material.density
+    );
+
+    setText(
+        "detail-hardness",
+        material.hardness
+    );
+
+    setText(
+        "detail-youngs-modulus",
+        material.youngsModulus
+    );
+
+    setText(
+        "detail-melting-point",
+        material.meltingPoint
+    );
+
+    setText(
+        "detail-thermal-conductivity",
+        material.thermalConductivity
+    );
+
+    setText(
+        "detail-thermal-expansion",
+        material.thermalExpansion
+    );
+
+
+    /*
+       Thermal-spray information.
+    */
+    setText(
+        "detail-spray-processes",
+        material.sprayProcesses
+    );
+
+    setText(
+        "detail-substrate",
+        material.substrate
+    );
+
+    setText(
+        "detail-coating-thickness",
+        material.coatingThickness
+    );
+
+    setText(
+        "detail-surface-preparation",
+        material.surfacePreparation
+    );
+
+
+    /*
+       Supplier information.
+    */
+    setText(
+        "detail-supplier-full",
+        material.supplier
+    );
+
+    setText(
+        "detail-product-name-full",
+        material.productName
+    );
+
+    setText(
+        "detail-product-number",
+        material.productNumber
+    );
+
+    setText(
+        "detail-country",
+        material.country
+    );
+
+
+    /*
+       Standards.
+    */
+    displayStandards(
+        material.standards
+    );
+
+
+    /*
+       Source and record information.
+    */
+    setText(
+        "detail-source-type",
+        material.sourceType
+    );
+
+    setText(
+        "detail-source-title",
+        material.sourceTitle
+    );
+
+    setText(
+        "detail-source-filename",
+        material.sourceFilename
+    );
+
+    setText(
+        "detail-date-added",
+        material.dateAdded
+    );
+
+    displayDocumentLink(
+        material.documentLink
+    );
+
+
+    /*
+       Research notes.
+    */
+    setText(
+        "detail-notes",
+        material.notes ||
+            "No notes have been added."
+    );
+
+
+    /*
+       Hide the loading message and display the completed record.
+    */
+    elements.status.hidden = true;
+    elements.content.hidden = false;
+}
+
+
+/* =========================================================
+   DISPLAY AN ERROR MESSAGE
+   ========================================================= */
+
+function displayError(message) {
+    elements.content.hidden = true;
+
+    elements.status.hidden = false;
+    elements.status.classList.add(
+        "detail-error"
+    );
+
+    elements.status.textContent = message;
+
+    if (elements.addToComparisonButton) {
+        elements.addToComparisonButton.disabled = true;
+    }
+
+    if (elements.editButton) {
+        elements.editButton.disabled = true;
+    }
+}
+
+
+/* =========================================================
+   ADD MATERIAL TO COMPARISON
+   ========================================================= */
+
+function configureComparisonButton(material) {
+    if (!elements.addToComparisonButton) {
+        return;
+    }
+
+    elements.addToComparisonButton.addEventListener(
+        "click",
+        () => {
+            const storageKey =
+                "varcoComparisonMaterials";
+
+            let selectedIds = [];
+
+            try {
+                selectedIds = JSON.parse(
+                    localStorage.getItem(storageKey)
+                ) || [];
+            } catch (error) {
+                selectedIds = [];
+            }
+
+            if (!selectedIds.includes(material.id)) {
+                selectedIds.push(material.id);
+
+                localStorage.setItem(
+                    storageKey,
+                    JSON.stringify(selectedIds)
+                );
+            }
+
+            elements.addToComparisonButton.textContent =
+                "Added to Comparison";
+
+            elements.addToComparisonButton.disabled =
+                true;
+        }
+    );
+}
+
+
+/* =========================================================
+   EDIT BUTTON
+
+   Spreadsheet imports are treated as reference records. Manual
+   records can return to the Current Materials page for editing.
+   ========================================================= */
+
+function configureEditButton(material) {
+    if (!elements.editButton) {
+        return;
+    }
+
+    if (material.origin === "csv") {
+        elements.editButton.textContent =
+            "Spreadsheet Record";
+
+        elements.editButton.disabled = true;
+
+        elements.editButton.title =
+            "Edit the uploaded spreadsheet to change this record.";
+
+        return;
+    }
+
+    elements.editButton.addEventListener(
+        "click",
+        () => {
+            const editUrl =
+                "current-materials.html?edit=" +
+                encodeURIComponent(material.id);
+
+            window.location.href = editUrl;
+        }
+    );
+}
+
+
+/* =========================================================
+   INITIALIZE THE MATERIAL DETAILS PAGE
+   ========================================================= */
+
+async function initializeMaterialDetails() {
+    const parameters =
+        new URLSearchParams(
+            window.location.search
+        );
+
+    const selectedId =
+        clean(parameters.get("id"));
+
+    if (!selectedId) {
+        displayError(
+            "No material was selected. Return to Current Materials and click a material name."
+        );
+
+        return;
+    }
+
+    elements.status.textContent =
+        "Loading material details...";
+
+    const manualRecords =
+        manualMaterials();
+
+    const spreadsheetRecords =
+        await spreadsheetMaterials();
+
+    const allMaterials = [
+        ...manualRecords,
+        ...spreadsheetRecords
+    ];
+
+    let selectedMaterial =
+        allMaterials.find(
+            (material) =>
+                material.id === selectedId
+        );
+
+    /*
+       Backup matching for an older spreadsheet link whose row
+       number changed after blank rows were removed.
+    */
+    if (
+        !selectedMaterial &&
+        selectedId.startsWith("csv:")
+    ) {
+        const selectedParts =
+            selectedId.split(":");
+
+        const selectedFileId =
+            selectedParts.slice(1, -1).join(":");
+
+        selectedMaterial =
+            spreadsheetRecords.find(
+                (material) =>
+                    material.id.includes(
+                        `csv:${selectedFileId}:`
+                    )
+            );
+    }
+
+    if (!selectedMaterial) {
+        displayError(
+            "This material could not be found. Make sure you are using Live Server and that the original spreadsheet is still uploaded."
+        );
+
+        return;
+    }
+
+    displayMaterial(selectedMaterial);
+    configureComparisonButton(selectedMaterial);
+    configureEditButton(selectedMaterial);
+}
+
+
+/* =========================================================
+   START THE PAGE
+   ========================================================= */
+
+initializeMaterialDetails();

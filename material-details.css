@@ -1,0 +1,780 @@
+/* =========================================================
+   MATERIAL DETAILS PAGE
+   File: material-details.css
+
+   This stylesheet controls only the reusable Material Details
+   page. The shared website header and navigation can continue
+   using style.css.
+   ========================================================= */
+
+
+/* =========================================================
+   PAGE COLOR SETTINGS
+
+   These variables make the colors easy to update later.
+   ========================================================= */
+
+:root {
+    --detail-navy-dark: #061629;
+    --detail-navy: #071b33;
+    --detail-blue: #0b3d91;
+    --detail-blue-hover: #082f70;
+    --detail-light-blue: #36a9e1;
+    --detail-pale-blue: #eaf5fb;
+    --detail-gold: #f2c94c;
+
+    --detail-page-background: #f3f6fa;
+    --detail-card-background: #ffffff;
+    --detail-border: #d6e0ea;
+
+    --detail-text: #1f2937;
+    --detail-text-muted: #5f6f7f;
+    --detail-text-light: #ffffff;
+
+    --detail-success: #237a4b;
+    --detail-success-background: #e8f6ee;
+
+    --detail-warning: #8a6400;
+    --detail-warning-background: #fff7d6;
+
+    --detail-error: #a12727;
+    --detail-error-background: #fdecec;
+
+    --detail-shadow:
+        0 8px 24px rgba(6, 22, 41, 0.08);
+
+    --detail-radius-small: 8px;
+    --detail-radius-medium: 12px;
+    --detail-radius-large: 16px;
+}
+
+
+/* =========================================================
+   BASIC PAGE SETTINGS
+   ========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--detail-page-background);
+    color: var(--detail-text);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+a {
+    color: var(--detail-blue);
+}
+
+a:hover {
+    color: var(--detail-blue-hover);
+}
+
+
+/* =========================================================
+   MAIN PAGE CONTAINER
+
+   Keeps the content centered and prevents long lines from
+   becoming difficult to read.
+   ========================================================= */
+
+.material-details-main {
+    width: min(1180px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 36px 0 64px;
+}
+
+
+/* =========================================================
+   TOOLBAR
+
+   Contains:
+   - Back to Current Materials
+   - Add to Comparison
+   - Edit Material
+   ========================================================= */
+
+.detail-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    margin-bottom: 24px;
+}
+
+.detail-action-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+
+/* =========================================================
+   BUTTONS
+
+   These classes are included here in case style.css does not
+   already define them.
+   ========================================================= */
+
+.primary-button,
+.secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 44px;
+    padding: 10px 18px;
+
+    border: 2px solid transparent;
+    border-radius: var(--detail-radius-small);
+
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.primary-button {
+    background: var(--detail-blue);
+    color: var(--detail-text-light);
+    border-color: var(--detail-blue);
+}
+
+.primary-button:hover {
+    background: var(--detail-blue-hover);
+    border-color: var(--detail-blue-hover);
+    color: var(--detail-text-light);
+
+    box-shadow:
+        0 5px 14px rgba(11, 61, 145, 0.22);
+
+    transform: translateY(-1px);
+}
+
+.secondary-button {
+    background: var(--detail-card-background);
+    color: var(--detail-blue);
+    border-color: var(--detail-blue);
+}
+
+.secondary-button:hover {
+    background: var(--detail-pale-blue);
+    color: var(--detail-blue-hover);
+    border-color: var(--detail-blue-hover);
+
+    transform: translateY(-1px);
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible {
+    outline: 3px solid rgba(54, 169, 225, 0.35);
+    outline-offset: 3px;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.back-button {
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   LOADING, STATUS, AND ERROR MESSAGES
+   ========================================================= */
+
+.detail-status,
+.detail-error {
+    padding: 18px 20px;
+    margin-bottom: 24px;
+
+    border: 1px solid var(--detail-border);
+    border-radius: var(--detail-radius-medium);
+
+    background: var(--detail-card-background);
+    box-shadow: var(--detail-shadow);
+
+    color: var(--detail-text);
+    font-weight: 700;
+}
+
+.detail-status {
+    border-left: 5px solid var(--detail-light-blue);
+}
+
+.detail-error {
+    border-color: #efb6b6;
+    border-left: 5px solid var(--detail-error);
+
+    background: var(--detail-error-background);
+    color: var(--detail-error);
+}
+
+
+/* =========================================================
+   MATERIAL CONTENT
+   ========================================================= */
+
+.material-detail-content {
+    display: grid;
+    gap: 24px;
+}
+
+/*
+   The hidden attribute must actually hide the article until
+   JavaScript finishes loading the selected material.
+*/
+.material-detail-content[hidden] {
+    display: none;
+}
+
+
+/* =========================================================
+   MATERIAL TITLE HEADER
+   ========================================================= */
+
+.material-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 28px;
+
+    padding: 30px;
+
+    border: 1px solid rgba(54, 169, 225, 0.25);
+    border-radius: var(--detail-radius-large);
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--detail-navy) 0%,
+            var(--detail-blue) 100%
+        );
+
+    box-shadow: var(--detail-shadow);
+    color: var(--detail-text-light);
+}
+
+.material-detail-header > div {
+    min-width: 0;
+}
+
+.detail-category-label {
+    margin: 0 0 8px;
+
+    color: var(--detail-gold);
+
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.material-detail-header h2 {
+    margin: 0;
+
+    color: var(--detail-text-light);
+
+    font-size: clamp(1.8rem, 4vw, 2.7rem);
+    line-height: 1.15;
+
+    overflow-wrap: anywhere;
+}
+
+.detail-product-name {
+    margin: 12px 0 0;
+
+    color: #dceeff;
+
+    font-size: 1.05rem;
+}
+
+
+/* =========================================================
+   DATA-QUALITY BADGE
+   ========================================================= */
+
+.quality-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    max-width: 240px;
+    padding: 8px 13px;
+
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, 0.13);
+    color: var(--detail-text-light);
+
+    font-size: 0.83rem;
+    font-weight: 800;
+    line-height: 1.3;
+    text-align: center;
+}
+
+
+/* =========================================================
+   QUICK SUMMARY GRID
+   ========================================================= */
+
+.detail-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.summary-item {
+    min-width: 0;
+    padding: 20px;
+
+    border: 1px solid var(--detail-border);
+    border-top: 4px solid var(--detail-light-blue);
+    border-radius: var(--detail-radius-medium);
+
+    background: var(--detail-card-background);
+    box-shadow: var(--detail-shadow);
+
+    overflow-wrap: anywhere;
+}
+
+.detail-label {
+    display: block;
+    margin-bottom: 7px;
+
+    color: var(--detail-text-muted);
+
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.summary-item > span:last-child {
+    color: var(--detail-text);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   DETAIL CARDS
+
+   Each major section, such as Composition or Material
+   Properties, appears inside one card.
+   ========================================================= */
+
+.detail-card {
+    padding: 28px;
+
+    border: 1px solid var(--detail-border);
+    border-radius: var(--detail-radius-large);
+
+    background: var(--detail-card-background);
+    box-shadow: var(--detail-shadow);
+}
+
+.detail-card-heading {
+    margin-bottom: 22px;
+    padding-bottom: 16px;
+
+    border-bottom: 2px solid var(--detail-pale-blue);
+}
+
+.detail-card-heading h3 {
+    margin: 0;
+
+    color: var(--detail-navy);
+
+    font-size: 1.35rem;
+    line-height: 1.25;
+}
+
+.detail-card-heading h3::after {
+    display: block;
+
+    width: 54px;
+    height: 4px;
+    margin-top: 10px;
+
+    border-radius: 999px;
+
+    background: var(--detail-gold);
+
+    content: "";
+}
+
+.detail-card-heading p {
+    max-width: 760px;
+    margin: 10px 0 0;
+
+    color: var(--detail-text-muted);
+    font-size: 0.96rem;
+}
+
+
+/* =========================================================
+   PROPERTY GRID
+
+   Uses description-list elements:
+   dt = property name
+   dd = property value
+   ========================================================= */
+
+.detail-property-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+
+    margin: 0;
+}
+
+.detail-property {
+    min-width: 0;
+    padding: 16px 18px;
+
+    border: 1px solid var(--detail-border);
+    border-radius: var(--detail-radius-small);
+
+    background: #f8fafc;
+}
+
+.detail-property:hover {
+    border-color: #b6d4e5;
+    background: #f4faff;
+}
+
+.detail-property dt {
+    margin: 0 0 7px;
+
+    color: var(--detail-blue);
+
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.detail-property dd {
+    margin: 0;
+
+    color: var(--detail-text);
+
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.55;
+
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.detail-property-wide {
+    grid-column: 1 / -1;
+}
+
+
+/* =========================================================
+   LINKS INSIDE PROPERTY CARDS
+   ========================================================= */
+
+.detail-property a,
+#detail-standards a,
+#detail-document-link a {
+    color: var(--detail-blue);
+    font-weight: 700;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+
+    overflow-wrap: anywhere;
+}
+
+.detail-property a:hover,
+#detail-standards a:hover,
+#detail-document-link a:hover {
+    color: var(--detail-blue-hover);
+}
+
+
+/* =========================================================
+   STANDARDS SECTION
+
+   JavaScript may create a list inside this container.
+   ========================================================= */
+
+#detail-standards {
+    color: var(--detail-text);
+}
+
+#detail-standards p {
+    margin: 0;
+}
+
+#detail-standards ul {
+    display: grid;
+    gap: 10px;
+
+    margin: 0;
+    padding-left: 22px;
+}
+
+#detail-standards li {
+    padding-left: 4px;
+}
+
+
+/* =========================================================
+   RESEARCH NOTES
+   ========================================================= */
+
+#detail-notes {
+    margin: 0;
+    padding: 18px;
+
+    border-left: 4px solid var(--detail-gold);
+    border-radius:
+        0
+        var(--detail-radius-small)
+        var(--detail-radius-small)
+        0;
+
+    background: #fffaf0;
+    color: var(--detail-text);
+
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+
+/* =========================================================
+   FOOTER FALLBACK
+
+   style.css may already style the footer. These rules ensure
+   that the detail page footer remains readable.
+   ========================================================= */
+
+.site-footer {
+    padding: 26px 20px;
+
+    background: var(--detail-navy);
+    color: var(--detail-text-light);
+
+    text-align: center;
+}
+
+.site-footer p {
+    margin: 0;
+}
+
+
+/* =========================================================
+   TABLET LAYOUT
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .material-details-main {
+        width: min(100% - 30px, 1180px);
+        padding-top: 28px;
+    }
+
+    .detail-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .material-detail-header {
+        padding: 26px;
+    }
+}
+
+
+/* =========================================================
+   MOBILE LAYOUT
+   ========================================================= */
+
+@media (max-width: 650px) {
+    body {
+        font-size: 15px;
+    }
+
+    .material-details-main {
+        width: min(100% - 24px, 1180px);
+        padding: 20px 0 44px;
+    }
+
+    .detail-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .detail-action-buttons {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .primary-button,
+    .secondary-button {
+        width: 100%;
+    }
+
+    .material-detail-header {
+        align-items: flex-start;
+        flex-direction: column;
+
+        padding: 22px;
+    }
+
+    .quality-badge {
+        max-width: 100%;
+    }
+
+    .detail-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-card {
+        padding: 20px;
+    }
+
+    .detail-property-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-property-wide {
+        grid-column: auto;
+    }
+}
+
+
+/* =========================================================
+   EXTRA-SMALL MOBILE LAYOUT
+   ========================================================= */
+
+@media (max-width: 400px) {
+    .material-details-main {
+        width: min(100% - 18px, 1180px);
+    }
+
+    .material-detail-header,
+    .detail-card {
+        border-radius: var(--detail-radius-medium);
+    }
+
+    .material-detail-header h2 {
+        font-size: 1.7rem;
+    }
+
+    .summary-item,
+    .detail-property {
+        padding: 15px;
+    }
+}
+
+
+/* =========================================================
+   PRINTING
+
+   Removes buttons and dark backgrounds when a material record
+   is printed or saved as a PDF.
+   ========================================================= */
+
+@media print {
+    body {
+        background: #ffffff;
+        color: #000000;
+    }
+
+    .site-header,
+    .main-navigation,
+    .detail-toolbar,
+    .site-footer {
+        display: none;
+    }
+
+    .material-details-main {
+        width: 100%;
+        padding: 0;
+    }
+
+    .material-detail-content {
+        gap: 16px;
+    }
+
+    .material-detail-header {
+        border: 2px solid #333333;
+        background: #ffffff;
+        box-shadow: none;
+        color: #000000;
+    }
+
+    .material-detail-header h2,
+    .detail-category-label,
+    .detail-product-name {
+        color: #000000;
+    }
+
+    .quality-badge {
+        border-color: #333333;
+        background: #ffffff;
+        color: #000000;
+    }
+
+    .detail-card,
+    .summary-item {
+        break-inside: avoid;
+
+        border-color: #999999;
+        box-shadow: none;
+    }
+}
+
+
+/* =========================================================
+   REDUCED-MOTION ACCESSIBILITY
+
+   Disables movement effects when the visitor has reduced
+   motion enabled in their device settings.
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
