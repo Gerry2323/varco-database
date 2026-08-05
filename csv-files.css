@@ -1,0 +1,129 @@
+/* CSV/XLSX worksheet tabs — loaded only by csv-files.html */
+
+.sheet-tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    margin: 18px 0 0;
+    padding: 10px 12px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #f3f6fa;
+    border: 1px solid #d7e0ea;
+    border-bottom: 0;
+    border-radius: 10px 10px 0 0;
+    scrollbar-width: thin;
+    scrollbar-color: #9db3ca transparent;
+}
+
+.sheet-tabs[hidden] {
+    display: none;
+}
+
+.sheet-tabs::-webkit-scrollbar {
+    height: 7px;
+}
+
+.sheet-tabs::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sheet-tabs::-webkit-scrollbar-thumb {
+    background: #9db3ca;
+    border-radius: 999px;
+}
+
+.sheet-tab {
+    position: relative;
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: #40546b;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 160ms ease, background-color 160ms ease,
+        border-color 160ms ease, transform 160ms ease;
+}
+
+.sheet-tab:hover {
+    background: #e5eef8;
+    color: #0b3d91;
+    transform: translateY(-1px);
+}
+
+.sheet-tab:focus-visible {
+    outline: 3px solid rgba(54, 169, 225, 0.3);
+    outline-offset: -3px;
+}
+
+.sheet-tab.active {
+    background: #ffffff;
+    color: #0b3d91;
+    border-color: #d7e0ea;
+    border-bottom-color: #ffffff;
+    box-shadow: 0 -3px 0 #0b3d91;
+}
+
+.sheet-tab.active::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    left: 0;
+    height: 3px;
+    background: #ffffff;
+}
+
+.sheet-tab:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.sheet-tabs + .spreadsheet-container {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.spreadsheet-table {
+    animation: worksheet-fade-in 180ms ease-out;
+}
+
+@keyframes worksheet-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(3px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 700px) {
+    .sheet-tabs {
+        padding-right: 8px;
+        padding-left: 8px;
+    }
+
+    .sheet-tab {
+        min-height: 38px;
+        padding: 8px 12px;
+        font-size: 0.82rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sheet-tab,
+    .spreadsheet-table {
+        transition: none;
+        animation: none;
+    }
+}
