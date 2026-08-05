@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ======================================================
-         BASIC PAGE SETTINGS
-         ====================================================== -->
-
     <meta charset="UTF-8">
 
     <meta
@@ -19,61 +15,42 @@
 
     <title>Material Details | VARCO Materials Database</title>
 
-
-    <!-- ======================================================
-         WEBSITE STYLESHEETS
-
-         style.css contains the shared website design.
-         material-details.css will contain styles for this page.
-         ====================================================== -->
-
+    <!-- Shared website design -->
     <link rel="stylesheet" href="style.css?v=4">
 
-    <link
-        rel="stylesheet"
-        href="material-details.css?v=1"
-    >
+    <!-- Material-details page design -->
+    <link rel="stylesheet" href="material-details.css?v=3">
 </head>
-
 
 <body>
 
-    <!-- ======================================================
-         WEBSITE HEADER
-         ====================================================== -->
-
+    <!-- WEBSITE HEADER -->
     <header class="main-header">
-    <p class="project-label">NASA Materials Research Project</p>
+        <p class="project-label">
+            NASA Materials Research Project
+        </p>
 
-    <h1>VARCO Materials Database</h1>
+        <h1>VARCO Materials Database</h1>
 
-    <p class="subtitle">
-        Lunar regolith, ceramic coatings, substrates, and test data
-    </p>
-</header>
+        <p class="subtitle">
+            Lunar regolith, ceramic coatings, substrates, and test data
+        </p>
+    </header>
 
-<nav class="navigation" aria-label="Main navigation">
-    <a href="index.html">Dashboard</a>
-    <a href="current-materials.html">Current Materials</a>
-    <a href="materials.html">Material Selector</a>
-    <a href="ashby.html">Ashby Charts</a>
-    <a href="csv-files.html">CSV Files</a>
-    <a href="index.html#about">About</a>
-</nav>
+    <!-- MAIN NAVIGATION -->
+    <nav class="navigation" aria-label="Main navigation">
+        <a href="index.html">Dashboard</a>
+        <a href="current-materials.html">Current Materials</a>
+        <a href="materials.html">Material Selector</a>
+        <a href="ashby.html">Ashby Charts</a>
+        <a href="csv-files.html">CSV Files</a>
+        <a href="index.html#about">About</a>
+    </nav>
 
-
-
-
-    <!-- ======================================================
-         MAIN MATERIAL-DETAIL PAGE
-         ====================================================== -->
-
+    <!-- MAIN MATERIAL-DETAIL PAGE -->
     <main class="material-details-main">
 
-        <!-- ==================================================
-             BACK BUTTON AND PAGE ACTIONS
-             ================================================== -->
-
+        <!-- BACK BUTTON AND PAGE ACTIONS -->
         <section
             class="detail-toolbar"
             aria-label="Material actions"
@@ -86,7 +63,6 @@
             </a>
 
             <div class="detail-action-buttons">
-
                 <button
                     id="add-to-comparison-button"
                     class="primary-button"
@@ -102,18 +78,10 @@
                 >
                     Edit Material
                 </button>
-
             </div>
         </section>
 
-
-        <!-- ==================================================
-             LOADING AND ERROR MESSAGE
-
-             JavaScript changes this message while it searches
-             for the selected material.
-             ================================================== -->
-
+        <!-- LOADING OR ERROR MESSAGE -->
         <div
             id="material-detail-status"
             class="detail-status"
@@ -123,26 +91,15 @@
             Loading material details...
         </div>
 
-
-        <!-- ==================================================
-             MATERIAL CONTENT
-
-             This section starts hidden. material-details.js
-             displays it after finding the selected material.
-             ================================================== -->
-
+        <!-- MATERIAL CONTENT -->
         <article
             id="material-detail-content"
             class="material-detail-content"
             hidden
         >
 
-            <!-- ==============================================
-                 MATERIAL TITLE
-                 ============================================== -->
-
+            <!-- MATERIAL TITLE -->
             <section class="material-detail-header">
-
                 <div>
                     <p
                         id="detail-category-label"
@@ -163,27 +120,19 @@
                     </p>
                 </div>
 
-
-                <!-- Data-quality badge -->
                 <span
                     id="detail-quality-badge"
                     class="quality-badge"
                 >
                     Quality not reported
                 </span>
-
             </section>
 
-
-            <!-- ==============================================
-                 QUICK RECORD SUMMARY
-                 ============================================== -->
-
+            <!-- QUICK RECORD SUMMARY -->
             <section
                 class="detail-summary-grid"
                 aria-label="Material summary"
             >
-
                 <div class="summary-item">
                     <span class="detail-label">
                         Category
@@ -193,7 +142,6 @@
                         Not reported
                     </span>
                 </div>
-
 
                 <div class="summary-item">
                     <span class="detail-label">
@@ -205,7 +153,6 @@
                     </span>
                 </div>
 
-
                 <div class="summary-item">
                     <span class="detail-label">
                         Supplier
@@ -216,7 +163,6 @@
                     </span>
                 </div>
 
-
                 <div class="summary-item">
                     <span class="detail-label">
                         Record Origin
@@ -226,14 +172,9 @@
                         Not reported
                     </span>
                 </div>
-
             </section>
 
-
-            <!-- ==============================================
-                 COMPOSITION INFORMATION
-                 ============================================== -->
-
+            <!-- COMPOSITION -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Composition</h3>
@@ -244,9 +185,7 @@
                     </p>
                 </div>
 
-
                 <dl class="detail-property-grid">
-
                     <div class="detail-property">
                         <dt>Composition as Reported</dt>
 
@@ -255,7 +194,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Composition Basis</dt>
 
@@ -263,15 +201,10 @@
                             Not reported
                         </dd>
                     </div>
-
                 </dl>
             </section>
 
-
-            <!-- ==============================================
-                 MANUFACTURING AND FEEDSTOCK
-                 ============================================== -->
-
+            <!-- MANUFACTURING AND FEEDSTOCK -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Manufacturing and Feedstock</h3>
@@ -282,9 +215,7 @@
                     </p>
                 </div>
 
-
                 <dl class="detail-property-grid">
-
                     <div class="detail-property">
                         <dt>Manufacturing Method</dt>
 
@@ -292,7 +223,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Feedstock Form</dt>
@@ -302,7 +232,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Minimum Particle Size</dt>
 
@@ -310,7 +239,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Maximum Particle Size</dt>
@@ -320,7 +248,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Average Particle Size / D50</dt>
 
@@ -329,7 +256,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Particle Morphology</dt>
 
@@ -337,15 +263,10 @@
                             Not reported
                         </dd>
                     </div>
-
                 </dl>
             </section>
 
-
-            <!-- ==============================================
-                 MATERIAL PROPERTIES
-                 ============================================== -->
-
+            <!-- MATERIAL PROPERTIES -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Material Properties</h3>
@@ -356,9 +277,7 @@
                     </p>
                 </div>
 
-
                 <dl class="detail-property-grid">
-
                     <div class="detail-property">
                         <dt>Density</dt>
 
@@ -366,7 +285,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Hardness</dt>
@@ -376,7 +294,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Young’s Modulus</dt>
 
@@ -384,7 +301,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Melting Point</dt>
@@ -394,7 +310,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Thermal Conductivity</dt>
 
@@ -403,7 +318,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Coefficient of Thermal Expansion</dt>
 
@@ -411,15 +325,10 @@
                             Not reported
                         </dd>
                     </div>
-
                 </dl>
             </section>
 
-
-            <!-- ==============================================
-                 SPRAY-PROCESS INFORMATION
-                 ============================================== -->
-
+            <!-- THERMAL SPRAY INFORMATION -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Thermal Spray Information</h3>
@@ -430,9 +339,7 @@
                     </p>
                 </div>
 
-
                 <dl class="detail-property-grid">
-
                     <div class="detail-property">
                         <dt>Recommended Spray Processes</dt>
 
@@ -440,7 +347,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Substrate</dt>
@@ -450,7 +356,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Coating Thickness</dt>
 
@@ -459,7 +364,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Surface Preparation</dt>
 
@@ -467,23 +371,16 @@
                             Not reported
                         </dd>
                     </div>
-
                 </dl>
             </section>
 
-
-            <!-- ==============================================
-                 SUPPLIER INFORMATION
-                 ============================================== -->
-
+            <!-- SUPPLIER INFORMATION -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Supplier Information</h3>
                 </div>
 
-
                 <dl class="detail-property-grid">
-
                     <div class="detail-property">
                         <dt>Supplier or Manufacturer</dt>
 
@@ -491,7 +388,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Product Name</dt>
@@ -501,7 +397,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Product Number</dt>
 
@@ -510,7 +405,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Country of Origin</dt>
 
@@ -518,15 +412,10 @@
                             Not reported
                         </dd>
                     </div>
-
                 </dl>
             </section>
 
-
-            <!-- ==============================================
-                 STANDARDS
-                 ============================================== -->
-
+            <!-- STANDARDS -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Standards and Test Methods</h3>
@@ -542,19 +431,13 @@
                 </div>
             </section>
 
-
-            <!-- ==============================================
-                 SOURCE AND RECORD INFORMATION
-                 ============================================== -->
-
+            <!-- SOURCE INFORMATION -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Source and Record Information</h3>
                 </div>
 
-
                 <dl class="detail-property-grid">
-
                     <div class="detail-property">
                         <dt>Source Type</dt>
 
@@ -562,7 +445,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Source Title</dt>
@@ -572,7 +454,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property">
                         <dt>Source Filename</dt>
 
@@ -580,7 +461,6 @@
                             Not reported
                         </dd>
                     </div>
-
 
                     <div class="detail-property">
                         <dt>Date Added</dt>
@@ -590,7 +470,6 @@
                         </dd>
                     </div>
 
-
                     <div class="detail-property detail-property-wide">
                         <dt>Document Link</dt>
 
@@ -598,15 +477,57 @@
                             Not reported
                         </dd>
                     </div>
-
                 </dl>
             </section>
 
+            <!-- MATERIAL IMAGES -->
+            <!-- MATERIAL IMAGES -->
+<section class="detail-card material-images-card">
+    <div class="detail-card-heading image-section-heading">
+        <div>
+            <h3>Material Images</h3>
 
-            <!-- ==============================================
-                 NOTES
-                 ============================================== -->
+            <p>
+                Upload photographs, microscopy images, coating
+                cross-sections, datasheet figures, or other images
+                for this material.
+            </p>
+        </div>
 
+        <label
+            for="material-image-input"
+            id="upload-material-image-button"
+            class="primary-button"
+            role="button"
+            tabindex="0"
+        >
+            Upload Images
+        </label>
+    </div>
+
+    <input
+        type="file"
+        id="material-image-input"
+        accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif"
+        multiple
+        hidden
+    >
+
+    <p
+        id="material-image-message"
+        class="material-image-message"
+    >
+        No images have been added to this material.
+    </p>
+
+    <div
+        id="material-image-gallery"
+        class="material-image-gallery"
+        aria-live="polite"
+    ></div>
+</section>
+
+            <!-- RESEARCH NOTES -->
             <section class="detail-card">
                 <div class="detail-card-heading">
                     <h3>Research Notes</h3>
@@ -619,40 +540,135 @@
 
         </article>
 
-
-        <!-- ==================================================
-             JAVASCRIPT-DISABLED MESSAGE
-             ================================================== -->
-
+        <!-- JAVASCRIPT-DISABLED MESSAGE -->
         <noscript>
             <div class="detail-error">
                 JavaScript must be enabled to load material
                 information.
             </div>
         </noscript>
-
     </main>
 
+    <!-- FULL-SIZE MATERIAL IMAGE VIEWER -->
+    <div
+        id="material-image-viewer"
+        class="material-image-viewer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="material-image-viewer-title"
+        hidden
+    >
+        <div class="material-image-viewer-panel">
+            <div class="material-image-viewer-header">
+                <h2 id="material-image-viewer-title">
+                    Inspect Material Image
+                </h2>
 
-    <!-- ======================================================
-         WEBSITE FOOTER
-         ====================================================== -->
+                <button
+                    type="button"
+                    id="close-material-image-viewer"
+                    class="image-viewer-close"
+                    aria-label="Close image viewer"
+                >
+                    &times;
+                </button>
+            </div>
 
+            <img
+                id="material-image-viewer-image"
+                class="material-image-viewer-image"
+                src=""
+                alt=""
+            >
+
+            <p
+                id="material-image-viewer-name"
+                class="material-image-viewer-name"
+            ></p>
+
+            <div class="material-image-viewer-actions">
+                <button
+                    type="button"
+                    id="delete-viewed-material-image"
+                    class="delete-image-button"
+                >
+                    Delete Image
+                </button>
+
+                <button
+                    type="button"
+                    id="close-material-image-viewer-button"
+                    class="secondary-button"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+<!-- FULL-SIZE MATERIAL IMAGE VIEWER -->
+<div
+    id="material-image-viewer"
+    class="material-image-viewer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="material-image-viewer-title"
+    hidden
+>
+    <div class="material-image-viewer-panel">
+        <div class="material-image-viewer-header">
+            <h2 id="material-image-viewer-title">
+                Inspect Material Image
+            </h2>
+
+            <button
+                type="button"
+                id="close-material-image-viewer"
+                class="image-viewer-close"
+                aria-label="Close image viewer"
+            >
+                &times;
+            </button>
+        </div>
+
+        <img
+            id="material-image-viewer-image"
+            class="material-image-viewer-image"
+            src=""
+            alt=""
+        >
+
+        <p
+            id="material-image-viewer-name"
+            class="material-image-viewer-name"
+        ></p>
+
+        <div class="material-image-viewer-actions">
+            <button
+                type="button"
+                id="delete-viewed-material-image"
+                class="delete-image-button"
+            >
+                Delete Image
+            </button>
+
+            <button
+                type="button"
+                id="close-material-image-viewer-button"
+                class="secondary-button"
+            >
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+    <!-- WEBSITE FOOTER -->
     <footer class="site-footer">
-        <p>
-            VARCO Materials Database
-        </p>
+        <p>VARCO Materials Database</p>
     </footer>
 
-
-    <!-- ======================================================
-         MATERIAL-DETAIL JAVASCRIPT
-
-         This file reads the material ID from the URL and fills
-         all the detail fields above.
-         ====================================================== -->
-
-    <script src="material-details.js?v=1"></script>
-
+    <!-- MATERIAL-DETAIL JAVASCRIPT -->
+    <script src="material-details.js?v=3"></script>
 </body>
 </html>

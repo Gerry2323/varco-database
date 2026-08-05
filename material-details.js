@@ -1492,8 +1492,625 @@ async function initializeMaterialDetails() {
     displayMaterial(selectedMaterial);
     configureComparisonButton(selectedMaterial);
     configureEditButton(selectedMaterial);
+    configureMaterialImages(selectedMaterial);
 }
 
+
+/* =========================================================
+   MATERIAL IMAGE STORAGE
+
+   Images are stored in IndexedDB instead of localStorage.
+   This provides more storage space for uploaded photographs.
+   ========================================================= */
+
+const MATERIAL_IMAGE_DATABASE = "varcoMaterialImages";
+const MATERIAL_IMAGE_STORE = "images";
+
+let activeMaterialImageId = "";
+let activeImageMaterialId = "";
+
+
+function openMaterialImageDatabase() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(
+            MATERIAL_IMAGE_DATABASE,
+            1
+        );
+
+        request.onupgradeneeded = () => {
+            const database = request.result;
+
+            if (
+                !database.objectStoreNames.contains(
+                    MATERIAL_IMAGE_STORE
+                )
+            ) {
+                const store = database.createObjectStore(
+                    MATERIAL_IMAGE_STORE,
+                    {
+                        keyPath: "id"
+                    }
+                );
+
+                store.createIndex(
+                    "materialId",
+                    "materialId",
+                    {
+                        unique: false
+                    }
+                );
+            }
+        };
+
+        request.onsuccess = () => {
+            resolve(request.result);
+        };
+
+        request.onerror = () => {
+            reject(request.error);
+        };
+    });
+}
+
+
+async function getMaterialImages(materialId) {
+    const database =
+        await openMaterialImageDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = database.transaction(
+            MATERIAL_IMAGE_STORE,
+            "readonly"
+        );
+
+        const store = transaction.objectStore(
+            MATERIAL_IMAGE_STORE
+        );
+
+        const index = store.index("materialId");
+        const request = index.getAll(materialId);
+
+        request.onsuccess = () => {
+            const images = request.result || [];
+
+            images.sort(
+                (first, second) =>
+                    second.dateAdded - first.dateAdded
+            );
+
+            resolve(images);
+        };
+
+        request.onerror = () => {
+            reject(request.error);
+        };
+
+        transaction.oncomplete = () => {
+            database.close();
+        };
+    });
+}
+
+
+async function saveMaterialImage(imageRecord) {
+    const database =
+        await openMaterialImageDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = database.transaction(
+            MATERIAL_IMAGE_STORE,
+            "readwrite"
+        );
+
+        const store = transaction.objectStore(
+            MATERIAL_IMAGE_STORE
+        );
+
+        store.put(imageRecord);
+
+        transaction.oncomplete = () => {
+            database.close();
+            resolve();
+        };
+
+        transaction.onerror = () => {
+            database.close();
+            reject(transaction.error);
+        };
+    });
+}
+
+
+async function removeMaterialImage(imageId) {
+    const database =
+        await openMaterialImageDatabase();
+
+    return new Promise((resolve, reject) => {
+        const transaction = database.transaction(
+            MATERIAL_IMAGE_STORE,
+            "readwrite"
+        );
+
+        const store = transaction.objectStore(
+            MATERIAL_IMAGE_STORE
+        );
+
+        store.delete(imageId);
+
+        transaction.oncomplete = () => {
+            database.close();
+            resolve();
+        };
+
+        transaction.onerror = () => {
+            database.close();
+            reject(transaction.error);
+        };
+    });
+}
+
+
+function createMaterialImageId() {
+    if (
+        window.crypto &&
+        typeof window.crypto.randomUUID === "function"
+    ) {
+        return window.crypto.randomUUID();
+    }
+
+    return (
+        "image-" +
+        Date.now() +
+        "-" +
+        Math.random().toString(16).slice(2)
+    );
+}
+
+
+function validMaterialImage(file) {
+    const acceptedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/webp",
+        "image/gif"
+    ];
+
+    if (!acceptedTypes.includes(file.type)) {
+        alert(
+            `${file.name} is not a supported image. ` +
+            "Use PNG, JPG, WEBP, or GIF."
+        );
+
+        return false;
+    }
+
+    const maximumSize = 10 * 1024 * 1024;
+
+    if (file.size > maximumSize) {
+        alert(
+            `${file.name} is larger than 10 MB. ` +
+            "Please choose a smaller image."
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+function openMaterialImageViewer(imageRecord) {
+    const viewer = document.getElementById(
+        "material-image-viewer"
+    );
+
+    const viewerImage = document.getElementById(
+        "material-image-viewer-image"
+    );
+
+    const viewerName = document.getElementById(
+        "material-image-viewer-name"
+    );
+
+    if (
+        !viewer ||
+        !viewerImage ||
+        !viewerName
+    ) {
+        return;
+    }
+
+    activeMaterialImageId = imageRecord.id;
+
+    viewerImage.src = URL.createObjectURL(
+        imageRecord.file
+    );
+
+    viewerImage.alt =
+        imageRecord.name ||
+        "Uploaded material image";
+
+    viewerName.textContent =
+        imageRecord.name ||
+        "Unnamed image";
+
+    viewer.hidden = false;
+
+    document.body.classList.add(
+        "image-viewer-open"
+    );
+}
+
+
+function closeMaterialImageViewer() {
+    const viewer = document.getElementById(
+        "material-image-viewer"
+    );
+
+    const viewerImage = document.getElementById(
+        "material-image-viewer-image"
+    );
+
+    if (!viewer) {
+        return;
+    }
+
+    if (
+        viewerImage &&
+        viewerImage.src.startsWith("blob:")
+    ) {
+        URL.revokeObjectURL(viewerImage.src);
+    }
+
+    if (viewerImage) {
+        viewerImage.src = "";
+        viewerImage.alt = "";
+    }
+
+    viewer.hidden = true;
+    activeMaterialImageId = "";
+
+    document.body.classList.remove(
+        "image-viewer-open"
+    );
+}
+
+
+async function displayMaterialImages(materialId) {
+    const gallery = document.getElementById(
+        "material-image-gallery"
+    );
+
+    const message = document.getElementById(
+        "material-image-message"
+    );
+
+    if (!gallery || !message) {
+        return;
+    }
+
+    gallery.replaceChildren();
+
+    let images = [];
+
+    try {
+        images = await getMaterialImages(
+            materialId
+        );
+    } catch (error) {
+        console.error(
+            "Material images could not be loaded.",
+            error
+        );
+
+        message.hidden = false;
+        message.textContent =
+            "The images could not be loaded.";
+
+        return;
+    }
+
+    message.hidden = images.length > 0;
+
+    if (!images.length) {
+        message.textContent =
+            "No images have been added to this material.";
+
+        return;
+    }
+
+    images.forEach((imageRecord) => {
+        const card =
+            document.createElement("article");
+
+        card.className = "material-image-card";
+
+        const previewButton =
+            document.createElement("button");
+
+        previewButton.type = "button";
+        previewButton.className =
+            "material-image-preview-button";
+
+        previewButton.setAttribute(
+            "aria-label",
+            `Inspect ${imageRecord.name}`
+        );
+
+        const thumbnail =
+            document.createElement("img");
+
+        thumbnail.className =
+            "material-image-thumbnail";
+
+        thumbnail.src = URL.createObjectURL(
+            imageRecord.file
+        );
+
+        thumbnail.alt =
+            imageRecord.name ||
+            "Uploaded material image";
+
+        thumbnail.addEventListener(
+            "load",
+            () => {
+                URL.revokeObjectURL(
+                    thumbnail.src
+                );
+            },
+            {
+                once: true
+            }
+        );
+
+        previewButton.appendChild(thumbnail);
+
+        previewButton.addEventListener(
+            "click",
+            () => {
+                openMaterialImageViewer(
+                    imageRecord
+                );
+            }
+        );
+
+        const information =
+            document.createElement("div");
+
+        information.className =
+            "material-image-information";
+
+        const imageName =
+            document.createElement("p");
+
+        imageName.className =
+            "material-image-name";
+
+        imageName.textContent =
+            imageRecord.name ||
+            "Unnamed image";
+
+        imageName.title = imageName.textContent;
+
+        const actions =
+            document.createElement("div");
+
+        actions.className =
+            "material-image-actions";
+
+        const inspectButton =
+            document.createElement("button");
+
+        inspectButton.type = "button";
+        inspectButton.className =
+            "inspect-image-button";
+
+        inspectButton.textContent = "Inspect";
+
+        inspectButton.addEventListener(
+            "click",
+            () => {
+                openMaterialImageViewer(
+                    imageRecord
+                );
+            }
+        );
+
+        const deleteButton =
+            document.createElement("button");
+
+        deleteButton.type = "button";
+        deleteButton.className =
+            "delete-image-button";
+
+        deleteButton.textContent = "Delete";
+
+        deleteButton.addEventListener(
+            "click",
+            async () => {
+                const confirmed = window.confirm(
+                    `Delete "${imageRecord.name}"?`
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                await removeMaterialImage(
+                    imageRecord.id
+                );
+
+                await displayMaterialImages(
+                    materialId
+                );
+            }
+        );
+
+        actions.append(
+            inspectButton,
+            deleteButton
+        );
+
+        information.append(
+            imageName,
+            actions
+        );
+
+        card.append(
+            previewButton,
+            information
+        );
+
+        gallery.appendChild(card);
+    });
+}
+
+
+function configureMaterialImages(material) {
+    const uploadButton = document.getElementById(
+        "upload-material-image-button"
+    );
+
+    const imageInput = document.getElementById(
+        "material-image-input"
+    );
+
+    const viewer = document.getElementById(
+        "material-image-viewer"
+    );
+
+    const closeViewerButton =
+        document.getElementById(
+            "close-material-image-viewer"
+        );
+
+    const closeViewerFooterButton =
+        document.getElementById(
+            "close-material-image-viewer-button"
+        );
+
+    const deleteViewedButton =
+        document.getElementById(
+            "delete-viewed-material-image"
+        );
+
+    if (!uploadButton || !imageInput) {
+        return;
+    }
+
+    activeImageMaterialId = material.id;
+
+    imageInput.addEventListener(
+        "change",
+        async () => {
+            const files = Array.from(
+                imageInput.files || []
+            );
+
+            const validFiles = files.filter(
+                validMaterialImage
+            );
+
+            uploadButton.classList.add("is-disabled");
+            uploadButton.textContent =
+                "Uploading...";
+
+            try {
+                for (const file of validFiles) {
+                    await saveMaterialImage({
+                        id: createMaterialImageId(),
+                        materialId: material.id,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        dateAdded: Date.now(),
+                        file: file
+                    });
+                }
+
+                await displayMaterialImages(
+                    material.id
+                );
+            } catch (error) {
+                console.error(
+                    "The image could not be saved.",
+                    error
+                );
+
+                alert(
+                    "The image could not be saved. " +
+                    "The browser may be out of storage space."
+                );
+            } finally {
+                imageInput.value = "";
+                uploadButton.classList.remove("is-disabled");
+                uploadButton.textContent =
+                    "Upload Images";
+            }
+        }
+    );
+
+    closeViewerButton?.addEventListener(
+        "click",
+        closeMaterialImageViewer
+    );
+
+    closeViewerFooterButton?.addEventListener(
+        "click",
+        closeMaterialImageViewer
+    );
+
+    viewer?.addEventListener(
+        "click",
+        (event) => {
+            if (event.target === viewer) {
+                closeMaterialImageViewer();
+            }
+        }
+    );
+
+    document.addEventListener(
+        "keydown",
+        (event) => {
+            if (
+                event.key === "Escape" &&
+                viewer &&
+                !viewer.hidden
+            ) {
+                closeMaterialImageViewer();
+            }
+        }
+    );
+
+    deleteViewedButton?.addEventListener(
+        "click",
+        async () => {
+            if (!activeMaterialImageId) {
+                return;
+            }
+
+            const confirmed = window.confirm(
+                "Delete this material image?"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            await removeMaterialImage(
+                activeMaterialImageId
+            );
+
+            closeMaterialImageViewer();
+
+            await displayMaterialImages(
+                activeImageMaterialId
+            );
+        }
+    );
+
+    displayMaterialImages(material.id);
+}
 
 /* =========================================================
    START THE PAGE
