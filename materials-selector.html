@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Filter and compare records in the VARCO Materials Database.">
+    <title>Material Selector | VARCO Materials Database</title>
+    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="materials-selector.css?v=1">
+</head>
+<body>
+    <header class="main-header">
+        <p class="project-label">NASA Materials Research Project</p>
+        <h1>VARCO Materials Database</h1>
+        <p class="subtitle">Lunar regolith, ceramic coatings, substrates, and test data</p>
+    </header>
+
+    <nav class="navigation" aria-label="Main navigation">
+        <a href="index.html#dashboard">Dashboard</a>
+        <a href="current-materials.html">Current Materials</a>
+        <a href="csv-files.html">CSV Files</a>
+        <a href="materials-selector.html">Material Selector</a>
+        <a href="ashby.html">Ashby Chart</a>
+        <a href="index.html#about">About</a>
+    </nav>
+
+    <main class="selector-main">
+        <section class="selector-intro">
+            <div>
+                <p class="selector-eyebrow">Engineering decision support</p>
+                <h2>Material Selector</h2>
+                <p>Use the same properties recorded by the Add New Material form to narrow the database, then select records for a side-by-side comparison.</p>
+            </div>
+            <div class="selector-summary" aria-live="polite">
+                <strong id="selector-result-count">0</strong>
+                <span>matching materials</span>
+            </div>
+        </section>
+
+        <section class="selector-layout">
+            <aside class="filter-panel" aria-labelledby="filter-title">
+                <div class="filter-panel-heading">
+                    <div>
+                        <h3 id="filter-title">Filter Parameters</h3>
+                        <p>Blank limits are ignored.</p>
+                    </div>
+                    <button id="clear-selector-filters" class="text-button" type="button">Clear all</button>
+                </div>
+
+                <div class="filter-stack">
+                    <label class="filter-field">Search
+                        <input id="selector-search" type="search" placeholder="Name, composition, supplier...">
+                    </label>
+
+                    <label class="filter-field">Category
+                        <select id="selector-category"><option value="">All categories</option></select>
+                    </label>
+
+                    <label class="filter-field">Feedstock Form
+                        <select id="selector-feedstock"><option value="">All forms</option></select>
+                    </label>
+
+                    <label class="filter-field">Composition Basis
+                        <select id="selector-composition-basis"><option value="">All bases</option></select>
+                    </label>
+
+                    <label class="filter-field">Manufacturing Method
+                        <select id="selector-method"><option value="">All methods</option></select>
+                    </label>
+
+                    <label class="filter-field">Morphology
+                        <select id="selector-morphology"><option value="">All morphologies</option></select>
+                    </label>
+
+                    <label class="filter-field">Supplier
+                        <select id="selector-supplier"><option value="">All suppliers</option></select>
+                    </label>
+
+                    <label class="filter-field">Recommended Spray Process
+                        <select id="selector-spray-process"><option value="">All processes</option></select>
+                    </label>
+
+                    <label class="filter-field">Source Type
+                        <select id="selector-source-type"><option value="">All source types</option></select>
+                    </label>
+
+                    <label class="filter-field">Data Quality Status
+                        <select id="selector-quality"><option value="">All quality levels</option></select>
+                    </label>
+
+                    <fieldset class="range-filter" data-filter="particleSize">
+                        <legend>Particle Size</legend>
+                        <div class="range-controls">
+                            <label>Minimum<input id="particle-filter-min" type="number" step="any" placeholder="Min"></label>
+                            <label>Maximum<input id="particle-filter-max" type="number" step="any" placeholder="Max"></label>
+                            <label class="unit-field">Unit<select id="particle-filter-unit"><option value="um">µm</option><option value="mm">mm</option><option value="nm">nm</option></select></label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="range-filter" data-filter="density">
+                        <legend>Density</legend>
+                        <div class="range-controls">
+                            <label>Minimum<input id="density-filter-min" type="number" step="any" placeholder="Min"></label>
+                            <label>Maximum<input id="density-filter-max" type="number" step="any" placeholder="Max"></label>
+                            <label class="unit-field">Unit<select id="density-filter-unit"><option value="gcm3">g/cm³</option><option value="kgm3">kg/m³</option></select></label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="range-filter" data-filter="hardness">
+                        <legend>Hardness Value</legend>
+                        <div class="range-controls range-controls-two">
+                            <label>Minimum<input id="hardness-filter-min" type="number" step="any" placeholder="Min"></label>
+                            <label>Maximum<input id="hardness-filter-max" type="number" step="any" placeholder="Max"></label>
+                        </div>
+                        <p class="range-note">Hardness results should use the same scale and load before direct comparison.</p>
+                    </fieldset>
+
+                    <fieldset class="range-filter" data-filter="modulus">
+                        <legend>Young’s Modulus</legend>
+                        <div class="range-controls">
+                            <label>Minimum<input id="modulus-filter-min" type="number" step="any" placeholder="Min"></label>
+                            <label>Maximum<input id="modulus-filter-max" type="number" step="any" placeholder="Max"></label>
+                            <label class="unit-field">Unit<select id="modulus-filter-unit"><option value="gpa">GPa</option><option value="mpa">MPa</option><option value="pa">Pa</option></select></label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="range-filter" data-filter="porosity">
+                        <legend>Porosity</legend>
+                        <div class="range-controls range-controls-two">
+                            <label>Minimum<input id="porosity-filter-min" type="number" step="any" placeholder="Min %"></label>
+                            <label>Maximum<input id="porosity-filter-max" type="number" step="any" placeholder="Max %"></label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="range-filter" data-filter="tensile">
+                        <legend>Tensile Strength</legend>
+                        <div class="range-controls">
+                            <label>Minimum<input id="tensile-filter-min" type="number" step="any" placeholder="Min"></label>
+                            <label>Maximum<input id="tensile-filter-max" type="number" step="any" placeholder="Max"></label>
+                            <label class="unit-field">Unit<select id="tensile-filter-unit"><option value="mpa">MPa</option><option value="gpa">GPa</option><option value="pa">Pa</option></select></label>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="range-filter" data-filter="meltingPoint">
+                        <legend>Melting Point</legend>
+                        <div class="range-controls">
+                            <label>Minimum<input id="melting-filter-min" type="number" step="any" placeholder="Min"></label>
+                            <label>Maximum<input id="melting-filter-max" type="number" step="any" placeholder="Max"></label>
+                            <label class="unit-field">Unit<select id="melting-filter-unit"><option value="c">°C</option><option value="k">K</option><option value="f">°F</option></select></label>
+                        </div>
+                    </fieldset>
+                </div>
+            </aside>
+
+            <section class="selector-results" aria-labelledby="results-title">
+                <div class="results-toolbar">
+                    <div><h3 id="results-title">Matching Materials</h3><p>Check a material to save it for comparison.</p></div>
+                    <label class="sort-control">Sort by
+                        <select id="selector-sort"><option value="name">Material name</option><option value="category">Category</option><option value="density">Density</option><option value="particleSizeMin">Particle size</option><option value="dateAdded">Date added</option></select>
+                    </label>
+                </div>
+                <div id="selector-status" class="selector-status" role="status">Loading materials...</div>
+                <div id="material-selector-grid" class="material-selector-grid" aria-live="polite"></div>
+            </section>
+        </section>
+
+        <section id="comparison-section" class="comparison-section" aria-labelledby="comparison-title">
+            <div class="comparison-heading">
+                <div><p class="selector-eyebrow">Saved selection</p><h2 id="comparison-title">Material Comparison</h2><p id="comparison-help">Select at least two materials to compare them.</p></div>
+                <button id="clear-comparison" class="secondary-button" type="button">Clear Comparison</button>
+            </div>
+            <div class="comparison-table-wrap">
+                <table id="comparison-table" class="comparison-table">
+                    <tbody id="comparison-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer"><p>VARCO Materials Database</p></footer>
+    <script src="materials-selector.js?v=1"></script>
+</body>
+</html>
