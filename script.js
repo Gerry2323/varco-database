@@ -98,7 +98,7 @@ const listDefinitions = {
     }
 };
 
-let materials = loadMaterials();
+let materials = [];
 let csvMaterials = [];
 let editingMaterialId = null;
 let listValues = createEmptyListValues();
@@ -128,27 +128,6 @@ function createMaterialId() {
     return Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
-function loadMaterials() {
-    const savedMaterials = localStorage.getItem("varcoMaterials");
-
-    if (!savedMaterials) {
-        return [];
-    }
-
-    try {
-        const parsedMaterials = JSON.parse(savedMaterials);
-
-        if (!Array.isArray(parsedMaterials)) {
-            return [];
-        }
-
-        return parsedMaterials.map(normalizeMaterial);
-    } catch (error) {
-        console.error("Saved VARCO material data could not be loaded:", error);
-        return [];
-    }
-}
-
 /* Keeps records made with the older form compatible. */
 function normalizeMaterial(material) {
     const normalized = {
@@ -176,10 +155,6 @@ function normalizeMaterial(material) {
     }
 
     return normalized;
-}
-
-function saveMaterials() {
-    localStorage.setItem("varcoMaterials", JSON.stringify(materials));
 }
 
 /* =========================================================
@@ -747,7 +722,7 @@ function buildMaterialRecord() {
 
 materialForm.addEventListener(
     "submit",
-    function (event) {
+    async function (event) {
         event.preventDefault();
 
         if (
@@ -766,38 +741,61 @@ materialForm.addEventListener(
 
         manufacturingMethodError.hidden = true;
 
-        const formRecord = buildMaterialRecord();
-        const now = new Date().toISOString();
-
-        if (editingMaterialId) {
-            const materialIndex = materials.findIndex(
-                function (material) {
-                    return (
-                        material.id === editingMaterialId
-                    );
-                }
+        if (!window.varcoApi) {
+            window.alert(
+                "The shared database connection did not load. Refresh the page and try again."
             );
-
-            if (materialIndex !== -1) {
-                materials[materialIndex] = {
-                    ...materials[materialIndex],
-                    ...formRecord,
-                    dateUpdated: now
-                };
-            }
-        } else {
-            materials.push({
-                id: createMaterialId(),
-                dateAdded: now,
-                dateUpdated: now,
-                ...formRecord
-            });
+            return;
         }
 
-        saveMaterials();
-        renderMaterials();
-        updateDashboard();
-        closeMaterialForm();
+        const existingMaterial = editingMaterialId
+            ? materials.find(function (material) {
+                  return material.id === editingMaterialId;
+              })
+            : null;
+
+        const materialToSave = {
+            ...(existingMaterial || {}),
+            ...buildMaterialRecord()
+        };
+
+        if (!existingMaterial) {
+            delete materialToSave.id;
+        }
+
+        saveMaterialButton.disabled = true;
+        saveMaterialButton.textContent = "Saving...";
+
+        try {
+            const savedMaterial = normalizeMaterial(
+                await window.varcoApi.saveMaterial(materialToSave)
+            );
+
+            const materialIndex = materials.findIndex(function (material) {
+                return material.id === savedMaterial.id;
+            });
+
+            if (materialIndex === -1) {
+                materials.unshift(savedMaterial);
+            } else {
+                materials[materialIndex] = savedMaterial;
+            }
+
+            renderMaterials();
+            updateDashboard();
+            closeMaterialForm();
+        } catch (error) {
+            console.error("Material could not be saved to Supabase:", error);
+            window.alert(
+                "The material was not saved. " +
+                (error?.message || "Please try again.")
+            );
+        } finally {
+            saveMaterialButton.disabled = false;
+            saveMaterialButton.textContent = editingMaterialId
+                ? "Save Changes"
+                : "Save Material";
+        }
     }
 );
 
@@ -1148,7 +1146,7 @@ function closeAllActionMenus() {
         });
 }
 
-function deleteMaterial(material) {
+async function deleteMaterial(material) {
     const confirmed = window.confirm(
         'Delete "' +
         material.name +
@@ -1159,24 +1157,35 @@ function deleteMaterial(material) {
         return;
     }
 
-    materials = materials.filter(
-        function (savedMaterial) {
-            return (
-                savedMaterial.id !==
-                material.id
-            );
-        }
-    );
-
-    if (
-        editingMaterialId === material.id
-    ) {
-        closeMaterialForm();
+    if (!window.varcoApi) {
+        window.alert(
+            "The shared database connection did not load. Refresh the page and try again."
+        );
+        return;
     }
 
-    saveMaterials();
-    renderMaterials();
-    updateDashboard();
+    try {
+        await window.varcoApi.deleteMaterial(material.id);
+
+        materials = materials.filter(
+            function (savedMaterial) {
+                return savedMaterial.id !== material.id;
+            }
+        );
+
+        if (editingMaterialId === material.id) {
+            closeMaterialForm();
+        }
+
+        renderMaterials();
+        updateDashboard();
+    } catch (error) {
+        console.error("Material could not be deleted from Supabase:", error);
+        window.alert(
+            "The material was not deleted. " +
+            (error?.message || "Please try again.")
+        );
+    }
 }
 
 function formatDate(dateValue) {
@@ -1254,8 +1263,25 @@ function updateDashboard() {
 }
 
 async function initializeMaterialsPage() {
-    csvMaterials =
-        await loadCsvMaterials();
+    try {
+        if (!window.varcoApi) {
+            throw new Error(
+                "The shared database connection did not load."
+            );
+        }
+
+        materials = (await window.varcoApi.listMaterials())
+            .map(normalizeMaterial);
+    } catch (error) {
+        console.error("Shared materials could not be loaded:", error);
+        materials = [];
+        window.alert(
+            "Shared materials could not be loaded. " +
+            (error?.message || "Refresh the page and try again.")
+        );
+    }
+
+    csvMaterials = await loadCsvMaterials();
 
     renderMaterials();
     updateDashboard();
