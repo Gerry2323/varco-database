@@ -150,8 +150,25 @@
 .chart-axis-line { stroke: #536679; stroke-width: 1.5; }
 .chart-tick { fill: #536679; font-size: 12px; }
 .chart-axis-label { fill: #071b33; font-size: 14px; font-weight: 800; }
+.family-region-layer { pointer-events: none; }
+.family-region {
+  fill-opacity: 0.28;
+  stroke: #071b33;
+  stroke-opacity: 0.54;
+  stroke-width: 1.5;
+}
+.family-region-label {
+  fill: #071b33;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.015em;
+}
 .material-point {
-  stroke: #fff;
+  stroke: #071b33;
   stroke-width: 2;
   cursor: pointer;
   transition: opacity 0.15s ease;
@@ -181,7 +198,13 @@
 .chart-help span::before { content: "•"; margin-right: 7px; color: var(--gold); }
 .family-legend { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--chart-border); }
 .legend-item { display: inline-flex; align-items: center; gap: 7px; color: #34495e; font-size: 0.82rem; font-weight: 700; }
-.legend-swatch { width: 13px; height: 13px; border-radius: 50%; }
+.legend-swatch {
+  width: 18px;
+  height: 13px;
+  border: 1px solid rgba(7, 27, 51, 0.5);
+  border-radius: 999px;
+  opacity: 0.72;
+}
 
 /* =========================================================
    CLICKED-MATERIAL INFORMATION PANEL
