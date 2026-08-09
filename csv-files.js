@@ -424,11 +424,48 @@ function parseWorkbook(arrayBuffer, filename) {
     return sheets;
 }
 
+function sharedMaterialFromRow(headers, row, filename) {
+    const completeRecord = {};
+    headers.forEach((header, index) => {
+        if (header) completeRecord[header] = row[index] || "Not Reported";
+    });
+
+    const valueFor = (heading, fallback = "Not Reported") => {
+        const index = headers.indexOf(heading);
+        const value = index >= 0 ? String(row[index] ?? "").trim() : "";
+        return value && value !== "Not Reported" ? value : fallback;
+    };
+    const listFor = (heading) => {
+        const value = valueFor(heading, "");
+        return value ? value.split(/[;,|]/).map((item) => item.trim()).filter(Boolean) : [];
+    };
+
+    return {
+        ...completeRecord,
+        name: valueFor("Material Name", "Unnamed material"),
+        category: valueFor("Category"),
+        composition: valueFor("Composition"),
+        compositionBasis: valueFor("Composition Basis", "Not specified"),
+        feedstockForm: valueFor("Feedstock Form"),
+        manufacturingMethods: listFor("Manufacturing Methods"),
+        morphologies: listFor("Morphologies"),
+        supplier: valueFor("Supplier"),
+        productName: valueFor("Product Name"),
+        productNumber: valueFor("Product Number"),
+        sourceType: valueFor("Source Type", "Other"),
+        sourceTitle: valueFor("Source Title", filename),
+        sourceFilename: valueFor("Source Filename", filename),
+        documentLink: valueFor("Document Link", valueFor("DOI or URL")),
+        origin: "shared-csv"
+    };
+}
+
 async function handleFiles(fileList) {
     const allowed = ["csv", "tsv", "xls", "xlsx"];
     let added = 0;
     let importedMaterialCount = 0;
     let importedFromPreferredSheet = "";
+    let sharedImportedMaterialCount = 0;
     const savedWithoutMaterialImport = [];
 
     for (const file of fileList) {
@@ -517,6 +554,28 @@ async function handleFiles(fileList) {
                 dateAdded: existingFile ? existingFile.dateAdded : now,
                 dateModified: now
             });
+
+            if (hasMaterialTable) {
+                if (!window.varcoApi) {
+                    throw new Error("The shared database connection did not load. Refresh and upload again.");
+                }
+                if (!(await window.varcoApi.currentUser())) {
+                    throw new Error("This file was saved on this device only. Sign in, then upload it again to publish it.");
+                }
+
+                const sharedFile = await window.varcoApi.uploadFile(file, {
+                    fileType: extension.toUpperCase(),
+                    rowCount: materialRowsInFile,
+                    materialCount: materialRowsInFile,
+                    sheetNames: parsedSheets.map((sheet) => sheet.sheetName)
+                });
+                const sharedRecords = combinedRows.slice(1)
+                    .map((row) => sharedMaterialFromRow(combinedRows[0], row, file.name))
+                    .filter((record) => record.name && record.name !== "Unnamed material");
+
+                await window.varcoApi.importMaterials(sharedRecords, sharedFile.id);
+                sharedImportedMaterialCount += sharedRecords.length;
+            }
             added += 1;
             importedMaterialCount += materialRowsInFile;
             if (!hasMaterialTable) {
@@ -540,7 +599,9 @@ async function handleFiles(fileList) {
                 `${added} file${added === 1 ? "" : "s"} uploaded successfully. ` +
                 `${importedMaterialCount} material record` +
                 `${importedMaterialCount === 1 ? "" : "s"} imported` +
-                `${sourceDescription}.${viewOnlyNotice}`
+                `${sourceDescription}. ` +
+                `${sharedImportedMaterialCount} record${sharedImportedMaterialCount === 1 ? "" : "s"} published to the shared database.` +
+                `${viewOnlyNotice}`
             );
     }
     fileInput.value = "";
