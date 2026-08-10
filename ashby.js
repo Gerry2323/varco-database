@@ -295,28 +295,16 @@ const properties = {
    ========================================================= */
 
 const familyColors = {
-    Ceramics: "#f4c430",
-    Metals: "#ef5b5b",
-    Composites: "#a78bfa",
-    Polymers: "#38bdf8",
-    Elastomers: "#22c55e",
-    Foams: "#7cff00",
-    "Natural materials": "#84cc16",
+    Ceramics: "#d97706",
+    Metals: "#2563eb",
+    Composites: "#7c3aed",
+    Polymers: "#db2777",
+    Elastomers: "#dc2626",
+    Foams: "#16a34a",
+    "Natural materials": "#65a30d",
     Regolith: "#8b5e3c",
     Other: "#64748b"
 };
-
-const familyRegionOrder = [
-    "Foams",
-    "Natural materials",
-    "Elastomers",
-    "Polymers",
-    "Composites",
-    "Ceramics",
-    "Regolith",
-    "Metals",
-    "Other"
-];
 
 
 /* =========================================================
@@ -349,9 +337,6 @@ const aliases = {
         "Material Density"
     ],
 
-    densityMin: ["density_min_g_cm3", "Density Min (g/cm³)"],
-    densityMax: ["density_max_g_cm3", "Density Max (g/cm³)"],
-
     apparentDensity: [
         "Apparent Density (g/cm³)",
         "Apparent Density"
@@ -364,24 +349,15 @@ const aliases = {
         "Elastic Modulus"
     ],
 
-    youngsModulusMin: ["young_modulus_min_gpa", "Young's Modulus Min (GPa)", "Young’s Modulus Min (GPa)"],
-    youngsModulusMax: ["young_modulus_max_gpa", "Young's Modulus Max (GPa)", "Young’s Modulus Max (GPa)"],
-
     tensileStrength: [
         "Tensile Strength (MPa)",
         "Tensile Strength"
     ],
 
-    tensileStrengthMin: ["tensile_strength_min_mpa", "Tensile Strength Min (MPa)"],
-    tensileStrengthMax: ["tensile_strength_max_mpa", "Tensile Strength Max (MPa)"],
-
     fractureToughness: [
         "Fracture Toughness (MPa·m^0.5)",
         "Fracture Toughness"
     ],
-
-    fractureToughnessMin: ["fracture_toughness_min_mpa_sqrt_m", "Fracture Toughness Min (MPa·m^0.5)"],
-    fractureToughnessMax: ["fracture_toughness_max_mpa_sqrt_m", "Fracture Toughness Max (MPa·m^0.5)"],
 
     thermalConductivity: [
         "Thermal Conductivity (W/m·K)",
@@ -398,9 +374,6 @@ const aliases = {
         "Melting Point",
         "Melt Point"
     ],
-
-    meltingPointMin: ["melting_point_min_c", "Melting Point Min (°C)"],
-    meltingPointMax: ["melting_point_max_c", "Melting Point Max (°C)"],
 
     porosity: [
         "Porosity (%)",
@@ -714,15 +687,6 @@ async function spreadsheetMaterials() {
                             name: name,
                             origin: "csv"
                         };
-
-                        material.rawProperties = {};
-                        headers.forEach((header, columnIndex) => {
-                            const heading = clean(header);
-                            const value = clean(row[columnIndex]);
-                            if (heading && value) {
-                                material.rawProperties[heading] = value;
-                            }
-                        });
 
                         if (window.VarcoSchema) {
                             Object.assign(
@@ -1538,22 +1502,6 @@ function drawChart(rebuildView = true) {
     svg.appendChild(yLabel);
 
     /*
-       Draw translucent family envelopes behind the points.
-
-       These regions are calculated from the records currently
-       visible on the chart. They therefore follow property,
-       unit, family-filter, zoom, and pan changes without
-       claiming reference ranges that are absent from the data.
-    */
-
-    drawFamilyRegions(
-        svg,
-        clipId,
-        xToPixel,
-        yToPixel
-    );
-
-    /*
        Draw every valid material as a colored circle.
     */
 
@@ -1668,125 +1616,6 @@ function drawChart(rebuildView = true) {
     svg.appendChild(pointGroup);
 
     renderLegend();
-}
-
-
-/*
-   Draw one padded statistical ellipse per material family.
-   A minimum on-screen size keeps one- and two-point families
-   visible while larger families use their actual spread and
-   orientation.
-*/
-
-function drawFamilyRegions(
-    svg,
-    clipId,
-    xToPixel,
-    yToPixel
-) {
-    const groupedPoints = new Map();
-
-    state.points.forEach((point) => {
-        if (!groupedPoints.has(point.family)) {
-            groupedPoints.set(point.family, []);
-        }
-
-        groupedPoints.get(point.family).push({
-            x: xToPixel(point.x),
-            y: yToPixel(point.y)
-        });
-    });
-
-    const regionGroup = svgElement("g", {
-        class: "family-region-layer",
-        "clip-path": `url(#${clipId})`,
-        "aria-hidden": "true"
-    });
-
-    familyRegionOrder.forEach((family) => {
-        const points = groupedPoints.get(family);
-
-        if (!points?.length) {
-            return;
-        }
-
-        const count = points.length;
-        const centerX = points.reduce(
-            (sum, point) => sum + point.x,
-            0
-        ) / count;
-        const centerY = points.reduce(
-            (sum, point) => sum + point.y,
-            0
-        ) / count;
-
-        let covarianceXX = 0;
-        let covarianceYY = 0;
-        let covarianceXY = 0;
-
-        points.forEach((point) => {
-            const dx = point.x - centerX;
-            const dy = point.y - centerY;
-            covarianceXX += dx * dx;
-            covarianceYY += dy * dy;
-            covarianceXY += dx * dy;
-        });
-
-        const divisor = Math.max(1, count - 1);
-        covarianceXX /= divisor;
-        covarianceYY /= divisor;
-        covarianceXY /= divisor;
-
-        const trace = covarianceXX + covarianceYY;
-        const difference = covarianceXX - covarianceYY;
-        const root = Math.sqrt(
-            difference * difference +
-            4 * covarianceXY * covarianceXY
-        );
-        const eigenvalue1 = Math.max(0, (trace + root) / 2);
-        const eigenvalue2 = Math.max(0, (trace - root) / 2);
-        const angle = 0.5 * Math.atan2(
-            2 * covarianceXY,
-            difference
-        ) * 180 / Math.PI;
-
-        const radiusX = Math.max(
-            count === 1 ? 44 : 50,
-            Math.sqrt(eigenvalue1) * 2.15 + 24
-        );
-        const radiusY = Math.max(
-            count === 1 ? 30 : 34,
-            Math.sqrt(eigenvalue2) * 2.15 + 20
-        );
-
-        regionGroup.appendChild(
-            svgElement("ellipse", {
-                cx: centerX,
-                cy: centerY,
-                rx: radiusX,
-                ry: radiusY,
-                transform:
-                    `rotate(${angle} ${centerX} ${centerY})`,
-                fill: familyColors[family] || familyColors.Other,
-                "fill-opacity": "0.30",
-                stroke: familyColors[family] || familyColors.Other,
-                "stroke-opacity": "0.78",
-                "stroke-width": "2",
-                class: "family-region"
-            })
-        );
-
-        const label = svgElement("text", {
-            x: centerX,
-            y: centerY - Math.min(radiusY * 0.42, 24),
-            class: "family-region-label",
-            "text-anchor": "middle"
-        });
-        label.textContent = family;
-        regionGroup.appendChild(label);
-    });
-
-    svg.appendChild(regionGroup);
 }
 
 
@@ -2332,12 +2161,6 @@ async function initialize() {
        Load both manually added and imported materials.
     */
 
-    const manualRecords =
-        manualMaterials();
-
-    const importedRecords =
-        await spreadsheetMaterials();
-
     let sharedRecords = [];
     try {
         sharedRecords = window.varcoApi
@@ -2347,13 +2170,9 @@ async function initialize() {
         console.error("Shared materials could not be loaded.", error);
     }
 
-    state.materials = [
-        ...sharedRecords,
-        ...manualRecords,
-        ...importedRecords
-    ].filter((material, index, records) =>
-        records.findIndex((candidate) => candidate.id === material.id) === index
-    );
+    // Supabase is the only material-record source so chart counts and points
+    // remain identical for signed-in and public users on every device.
+    state.materials = sharedRecords;
 
     populateFamilies();
 

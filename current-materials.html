@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Current Materials | VARCO Materials Database</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <header>
+    <header class="main-header">
+        <p class="project-label">NASA Materials Research Project</p>
+
         <h1>Current Materials</h1>
+
         <p class="subtitle">
             Browse, filter, and compare manual and spreadsheet records
         </p>
@@ -17,136 +22,179 @@
 
     <nav class="navigation" aria-label="Main navigation">
         <a href="index.html#dashboard">Dashboard</a>
-        <a href="current-materials.html" aria-current="page">Current Materials</a>
+
+        <a href="current-materials.html" aria-current="page">
+            Current Materials
+        </a>
+
         <a href="csv-files.html">CSV Files</a>
-        <a href="materials-selector.html">Material Selector</a>
+        <a href="materials.html">Material Selector</a>
         <a href="ashby.html">Ashby Chart</a>
         <a href="index.html#about">About</a>
     </nav>
 
     <main class="catalog-main">
-        <section class="catalog-intro" aria-labelledby="catalog-heading">
+        <!-- =====================================================
+             MATERIALS CATALOG AND DASHBOARD
+             ===================================================== -->
+
+        <section
+            class="catalog-intro"
+            aria-labelledby="catalog-heading"
+        >
             <div class="section-heading">
                 <div>
                     <h2 id="catalog-heading">Materials Catalog</h2>
+
                     <p>
                         <span id="catalog-result-count">0</span>
                         matching material records
                     </p>
                 </div>
 
-                <a class="primary-link-button" href="index.html#materials">
+                <a
+                    class="primary-link-button"
+                    href="index.html#materials"
+                >
                     + Add New Material
                 </a>
             </div>
 
             <div class="summary-cards catalog-summary" aria-label="Materials summary">
-                <article class="summary-card">
-                    <p>Total Materials</p>
-                    <strong id="catalog-total-count">0</strong>
-                </article>
+    <article class="summary-card">
+        <p>Total Materials</p>
+        <strong id="catalog-total-count">0</strong>
+    </article>
 
-                <article class="summary-card">
-                    <p>Categories</p>
-                    <strong id="catalog-category-count">0</strong>
-                </article>
+    <article class="summary-card">
+        <p>Categories</p>
+        <strong id="catalog-category-count">0</strong>
+    </article>
 
-                <article class="summary-card">
-                    <p>Suppliers</p>
-                    <strong id="catalog-supplier-count">0</strong>
-                </article>
+    <article class="summary-card">
+        <p>Suppliers</p>
+        <strong id="catalog-supplier-count">0</strong>
+    </article>
 
-                <article class="summary-card">
-                    <p>Verified Records</p>
-                    <strong id="catalog-verified-count">0</strong>
-                </article>
+    <article class="summary-card">
+        <p>Verified Records</p>
+        <strong id="catalog-verified-count">0</strong>
+    </article>
+
             </div>
         </section>
+
+        <!-- =====================================================
+             SEARCH AND FILTERS
+             ===================================================== -->
 
         <section aria-labelledby="filters-heading">
-            <div class="section-heading compact-heading">
-                <div>
-                    <h2 id="filters-heading">Search and Filters</h2>
-                    <p>Use one or more filters to narrow the catalog.</p>
-                </div>
+    <div class="section-heading compact-heading">
+        <div>
+            <h2 id="filters-heading">Search and Filters</h2>
+            <p>Use one or more filters to narrow the catalog.</p>
+        </div>
 
-                <button id="clear-material-filters" class="secondary-button" type="button">
-                    Clear Filters
-                </button>
-            </div>
+        <button
+            id="clear-material-filters"
+            class="secondary-button"
+            type="button"
+        >
+            Clear Filters
+        </button>
+    </div>
 
-            <div class="catalog-filters">
-                <div class="form-group catalog-search">
-                    <label for="catalog-search">Search</label>
-                    <input
-                        id="catalog-search"
-                        type="search"
-                        placeholder="Material, composition, supplier, or product..."
-                    >
-                </div>
+    <!-- Every filter must be inside this ONE container -->
+    <div class="catalog-filters">
+        <div class="form-group catalog-search">
+            <label for="catalog-search">Search</label>
 
-                <div class="form-group">
-                    <label for="catalog-category-filter">Category</label>
-                    <select id="catalog-category-filter">
-                        <option value="">All categories</option>
-                    </select>
-                </div>
+            <input
+                id="catalog-search"
+                type="search"
+                placeholder="Material, composition, supplier, or product..."
+            >
+        </div>
 
-                <div class="form-group">
-                    <label for="catalog-form-filter">Feedstock Form</label>
-                    <select id="catalog-form-filter">
-                        <option value="">All forms</option>
-                    </select>
-                </div>
+        <div class="form-group">
+            <label for="catalog-category-filter">Category</label>
 
-                <div class="form-group">
-                    <label for="catalog-method-filter">Manufacturing Method</label>
-                    <select id="catalog-method-filter">
-                        <option value="">All methods</option>
-                    </select>
-                </div>
+            <select id="catalog-category-filter">
+                <option value="">All categories</option>
+            </select>
+        </div>
 
-                <div class="form-group">
-                    <label for="catalog-supplier-filter">Supplier</label>
-                    <select id="catalog-supplier-filter">
-                        <option value="">All suppliers</option>
-                    </select>
-                </div>
+        <div class="form-group">
+            <label for="catalog-form-filter">Feedstock Form</label>
 
-                <div class="form-group">
-                    <label for="catalog-process-filter">Spray Process</label>
-                    <select id="catalog-process-filter">
-                        <option value="">All processes</option>
-                    </select>
-                </div>
+            <select id="catalog-form-filter">
+                <option value="">All forms</option>
+            </select>
+        </div>
 
-                <div class="form-group">
-                    <label for="catalog-quality-filter">Data Quality</label>
-                    <select id="catalog-quality-filter">
-                        <option value="">All quality levels</option>
-                    </select>
-                </div>
+        <div class="form-group">
+            <label for="catalog-method-filter">Manufacturing Method</label>
 
-                <div class="form-group">
-                    <label for="catalog-origin-filter">Record Origin</label>
-                    <select id="catalog-origin-filter">
-                        <option value="">All records</option>
-                        <option value="manual">Manual Entry</option>
-                        <option value="csv">Spreadsheet Import</option>
-                    </select>
-                </div>
-            </div>
-        </section>
+            <select id="catalog-method-filter">
+                <option value="">All methods</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="catalog-supplier-filter">Supplier</label>
+
+            <select id="catalog-supplier-filter">
+                <option value="">All suppliers</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="catalog-process-filter">Spray Process</label>
+
+            <select id="catalog-process-filter">
+                <option value="">All processes</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="catalog-quality-filter">Data Quality</label>
+
+            <select id="catalog-quality-filter">
+                <option value="">All quality levels</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="catalog-origin-filter">Record Origin</label>
+
+            <select id="catalog-origin-filter">
+                <option value="">All records</option>
+                <option value="manual">Manual Entry</option>
+                <option value="csv">Spreadsheet Import</option>
+            </select>
+        </div>
+    </div>
+</section>
+        <!-- =====================================================
+             MATERIALS TABLE
+             ===================================================== -->
 
         <section aria-labelledby="table-heading">
             <div class="section-heading compact-heading">
                 <div>
                     <h2 id="table-heading">All Materials</h2>
-                    <p id="catalog-page-status">Showing 0 materials</p>
+
+                    <p id="catalog-page-status">
+                        Showing 0 materials
+                    </p>
                 </div>
 
-                <label class="rows-control" for="catalog-page-size">
+                <label
+                    class="rows-control"
+                    for="catalog-page-size"
+                >
                     Rows per page
+
                     <select id="catalog-page-size">
                         <option value="25">25</option>
                         <option value="50">50</option>
@@ -160,23 +208,39 @@
                     <thead>
                         <tr>
                             <th scope="col">
-                                <button class="sort-button" data-sort="name" type="button">
+                                <button
+                                    class="sort-button"
+                                    data-sort="name"
+                                    type="button"
+                                >
                                     Material Name
                                 </button>
                             </th>
+
                             <th scope="col">
-                                <button class="sort-button" data-sort="category" type="button">
+                                <button
+                                    class="sort-button"
+                                    data-sort="category"
+                                    type="button"
+                                >
                                     Category
                                 </button>
                             </th>
+
                             <th scope="col">Composition</th>
                             <th scope="col">Feedstock Form</th>
                             <th scope="col">Particle Size</th>
+
                             <th scope="col">
-                                <button class="sort-button" data-sort="supplier" type="button">
+                                <button
+                                    class="sort-button"
+                                    data-sort="supplier"
+                                    type="button"
+                                >
                                     Supplier
                                 </button>
                             </th>
+
                             <th scope="col">Spray Process</th>
                             <th scope="col">Data Quality</th>
                             <th scope="col">Origin</th>
@@ -186,18 +250,35 @@
 
                     <tbody id="catalog-table-body">
                         <tr class="empty-row">
-                            <td colspan="10">Loading materials...</td>
+                            <td colspan="10">
+                                Loading materials...
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div class="catalog-pagination" aria-label="Materials pages">
-                <button id="catalog-previous-page" class="secondary-button" type="button">
+            <div
+                class="catalog-pagination"
+                aria-label="Materials pages"
+            >
+                <button
+                    id="catalog-previous-page"
+                    class="secondary-button"
+                    type="button"
+                >
                     Previous
                 </button>
-                <span id="catalog-page-number">Page 1 of 1</span>
-                <button id="catalog-next-page" class="secondary-button" type="button">
+
+                <span id="catalog-page-number">
+                    Page 1 of 1
+                </span>
+
+                <button
+                    id="catalog-next-page"
+                    class="secondary-button"
+                    type="button"
+                >
                     Next
                 </button>
             </div>
@@ -209,7 +290,8 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="varco-api.js?v=20260809-1"></script>
-    <script src="current-materials.js?v=20260809-1"></script>
+    <script src="varco-api.js?v=20260809-4"></script>
+    <script src="varco-schema.js?v=20260809-1"></script>
+    <script src="current-materials.js?v=20260810-1"></script>
 </body>
 </html>

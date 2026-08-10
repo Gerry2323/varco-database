@@ -466,7 +466,17 @@ async function handleFiles(fileList) {
     let importedMaterialCount = 0;
     let importedFromPreferredSheet = "";
     let sharedImportedMaterialCount = 0;
+    let localOnlyFileCount = 0;
     const savedWithoutMaterialImport = [];
+    const sharedUploadWarnings = [];
+    let signedInUser = null;
+    if (window.varcoApi) {
+        try {
+            signedInUser = await window.varcoApi.currentUser();
+        } catch (error) {
+            console.warn("Editor status could not be checked; continuing in local-only mode:", error);
+        }
+    }
 
     for (const file of fileList) {
         const extension = extensionOf(file.name);
@@ -535,7 +545,7 @@ async function handleFiles(fileList) {
             const existingFile = savedFiles.find(
                 (savedFile) => savedFile.name.toLowerCase() === file.name.toLowerCase()
             );
-            await putFile({
+            const localFileRecord = {
                 /* Re-uploading the same filename updates it instead of
                    creating a second set of duplicate material records. */
                 id: existingFile ? existingFile.id : createId(),
@@ -553,28 +563,51 @@ async function handleFiles(fileList) {
                 materialCount: materialRowsInFile,
                 dateAdded: existingFile ? existingFile.dateAdded : now,
                 dateModified: now
-            });
+            };
+            await putFile(localFileRecord);
 
-            if (hasMaterialTable) {
-                if (!window.varcoApi) {
-                    throw new Error("The shared database connection did not load. Refresh and upload again.");
+            if (signedInUser) {
+                let sharedFile = null;
+                try {
+                    sharedFile = await window.varcoApi.uploadFile(file, {
+                        fileType: extension.toUpperCase(),
+                        rowCount: materialRowsInFile,
+                        materialCount: materialRowsInFile,
+                        sheetNames: parsedSheets.map((sheet) => sheet.sheetName)
+                    });
+                    localFileRecord.sharedFileId = sharedFile.id;
+                    localFileRecord.sharedStoragePath = sharedFile.storage_path;
+                    await putFile(localFileRecord);
+
+                    if (hasMaterialTable) {
+                        const sharedRecords = combinedRows.slice(1)
+                            .map((row) => sharedMaterialFromRow(combinedRows[0], row, file.name))
+                            .filter((record) => record.name && record.name !== "Unnamed material");
+
+                        await window.varcoApi.importMaterials(sharedRecords, sharedFile.id);
+                        sharedImportedMaterialCount += sharedRecords.length;
+                    }
+                } catch (sharedError) {
+                    if (sharedFile?.id) {
+                        try {
+                            await window.varcoApi.deleteFile({
+                                id: sharedFile.id,
+                                storagePath: sharedFile.storage_path
+                            });
+                        } catch (cleanupError) {
+                            console.warn("Incomplete shared upload cleanup:", cleanupError);
+                        }
+                        delete localFileRecord.sharedFileId;
+                        delete localFileRecord.sharedStoragePath;
+                        await putFile(localFileRecord);
+                    }
+                    localOnlyFileCount += 1;
+                    sharedUploadWarnings.push(
+                        `${file.name} stayed local because Supabase rejected the upload: ${sharedError.message}`
+                    );
                 }
-                if (!(await window.varcoApi.currentUser())) {
-                    throw new Error("This file was saved on this device only. Sign in, then upload it again to publish it.");
-                }
-
-                const sharedFile = await window.varcoApi.uploadFile(file, {
-                    fileType: extension.toUpperCase(),
-                    rowCount: materialRowsInFile,
-                    materialCount: materialRowsInFile,
-                    sheetNames: parsedSheets.map((sheet) => sheet.sheetName)
-                });
-                const sharedRecords = combinedRows.slice(1)
-                    .map((row) => sharedMaterialFromRow(combinedRows[0], row, file.name))
-                    .filter((record) => record.name && record.name !== "Unnamed material");
-
-                await window.varcoApi.importMaterials(sharedRecords, sharedFile.id);
-                sharedImportedMaterialCount += sharedRecords.length;
+            } else {
+                localOnlyFileCount += 1;
             }
             added += 1;
             importedMaterialCount += materialRowsInFile;
@@ -600,8 +633,14 @@ async function handleFiles(fileList) {
                 `${importedMaterialCount} material record` +
                 `${importedMaterialCount === 1 ? "" : "s"} imported` +
                 `${sourceDescription}. ` +
-                `${sharedImportedMaterialCount} record${sharedImportedMaterialCount === 1 ? "" : "s"} published to the shared database.` +
-                `${viewOnlyNotice}`
+                (signedInUser
+                    ? `${sharedImportedMaterialCount} material record${sharedImportedMaterialCount === 1 ? "" : "s"} published to the shared database.` +
+                        (localOnlyFileCount
+                            ? ` ${localOnlyFileCount} file${localOnlyFileCount === 1 ? " remains" : "s remain"} local only.`
+                            : "")
+                    : `${localOnlyFileCount} file${localOnlyFileCount === 1 ? " was" : "s were"} saved only on this browser. Sign in and upload again to publish to Supabase.`) +
+                `${viewOnlyNotice}` +
+                (sharedUploadWarnings.length ? ` ${sharedUploadWarnings.join(" ")}` : "")
             );
     }
     fileInput.value = "";
@@ -614,7 +653,56 @@ function showMessage(message, isError = false) {
 }
 
 async function refreshFileList() {
-    savedFiles = (await readAllFiles()).sort(
+    const localFiles = await readAllFiles();
+    let sharedFiles = [];
+    let signedInUser = null;
+
+    if (window.varcoApi) {
+        try {
+            signedInUser = await window.varcoApi.currentUser();
+            if (signedInUser) {
+                sharedFiles = await window.varcoApi.listFiles();
+            }
+        } catch (error) {
+            console.warn("Shared uploaded files could not be loaded:", error);
+        }
+    }
+
+    const matchedSharedIds = new Set();
+    const combinedFiles = localFiles.map((localFile) => {
+        const sharedFile = sharedFiles.find((candidate) =>
+            candidate.id === localFile.sharedFileId
+        );
+
+        if (!sharedFile) return localFile;
+        matchedSharedIds.add(sharedFile.id);
+        return {
+            ...localFile,
+            sharedFileId: sharedFile.id,
+            sharedStoragePath: sharedFile.storagePath,
+            rowCount: sharedFile.rowCount,
+            materialCount: sharedFile.materialCount
+        };
+    });
+
+    sharedFiles.forEach((sharedFile) => {
+        if (matchedSharedIds.has(sharedFile.id)) return;
+        combinedFiles.push({
+            id: `shared:${sharedFile.id}`,
+            name: sharedFile.name,
+            originalType: sharedFile.originalType,
+            rowCount: sharedFile.rowCount,
+            materialCount: sharedFile.materialCount,
+            dateAdded: sharedFile.dateAdded,
+            dateModified: sharedFile.dateModified,
+            sharedFileId: sharedFile.id,
+            sharedStoragePath: sharedFile.storagePath,
+            sharedOnly: true,
+            rows: []
+        });
+    });
+
+    savedFiles = combinedFiles.sort(
         (a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)
     );
     uploadedFileCount.textContent = savedFiles.length;
@@ -644,7 +732,7 @@ function renderFileList() {
         row.append(
             textCell(file.name || "Unnamed file", "file-name-cell"),
             textCell(file.originalType || "FILE"),
-            textCell(String(Math.max((file.rows?.length || 1) - 1, 0))),
+            textCell(String(file.rowCount ?? Math.max((file.rows?.length || 1) - 1, 0))),
             textCell(formatDate(file.dateAdded)),
             textCell(formatDate(file.dateModified)),
             actionCell(file)
@@ -664,12 +752,16 @@ function actionCell(file) {
     const cell = document.createElement("td");
     const actions = document.createElement("div");
     actions.className = "file-actions";
-    [
-        ["View", () => openViewer(file, false)],
-        ["Edit", () => openViewer(file, true)],
-        ["Rename", () => renameSavedFile(file)],
-        ["Delete", () => deleteSavedFile(file)]
-    ].forEach(([label, handler]) => {
+    const availableActions = file.sharedOnly
+        ? [["Delete", () => deleteSavedFile(file)]]
+        : [
+            ["View", () => openViewer(file, false)],
+            ["Edit", () => openViewer(file, true)],
+            ["Rename", () => renameSavedFile(file)],
+            ["Delete", () => deleteSavedFile(file)]
+        ];
+
+    availableActions.forEach(([label, handler]) => {
         const button = document.createElement("button");
         button.type = "button";
         button.textContent = label;
@@ -698,11 +790,41 @@ async function renameSavedFile(file) {
 }
 
 async function deleteSavedFile(file) {
-    if (!window.confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
-    await removeFile(file.id);
-    if (activeFile && activeFile.id === file.id) closeViewer();
-    showMessage(`${file.name} was deleted.`);
-    await refreshFileList();
+    const isSharedFile = Boolean(file.sharedFileId);
+    const confirmation = isSharedFile
+        ? `Delete "${file.name}" from Supabase and delete all materials imported from it? Manual materials and materials from other files will not be deleted. This cannot be undone.`
+        : `Delete the local copy of "${file.name}" from this browser? This will not change Supabase.`;
+    if (!window.confirm(confirmation)) return;
+
+    try {
+        if (isSharedFile) {
+            if (!window.varcoApi) {
+                throw new Error("The shared database connection did not load. Refresh and try again.");
+            }
+            if (!(await window.varcoApi.currentUser())) {
+                throw new Error("Sign in as a verified editor before deleting this shared file.");
+            }
+
+            await window.varcoApi.deleteFile({
+                id: file.sharedFileId,
+                name: file.name,
+                storagePath: file.sharedStoragePath
+            });
+        }
+
+        if (!file.sharedOnly) await removeFile(file.id);
+        if (activeFile && activeFile.id === file.id) closeViewer();
+
+        showMessage(isSharedFile
+            ? `${file.name} and its imported materials were deleted from Supabase.`
+            : `${file.name} was deleted from this browser only.`);
+        await refreshFileList();
+    } catch (error) {
+        showMessage(
+            `Nothing was removed because the complete deletion could not be verified. ${error.message}`,
+            true
+        );
+    }
 }
 
 function openViewer(file, startEditing) {

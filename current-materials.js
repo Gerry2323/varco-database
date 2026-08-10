@@ -108,71 +108,8 @@ const aliases = {
         "Source Link",
         "Reference Link",
         "DOI or URL",
-        "URL",
-        "Source URL",
-        "source_url"
-    ],
-
-    /* Rich materials-data fields used by the Cambridge/VARCO CSV. */
-    recordId: ["Record ID", "record_id"],
-    recordType: ["Record Type", "record_type"],
-    dataSourceGroup: ["Data Source Group", "data_source_group"],
-    parentMaterial: ["Parent Material", "parent_material"],
-    productNumber: ["Product Code", "Product Number", "product_code"],
-    powderFamily: ["Powder Family", "powder_family"],
-    compositionBasis: ["Composition Basis", "composition_basis"],
-    morphology: ["Morphology", "Morphologies", "morphology"],
-    particleSizeReported: ["Particle Size Range Reported", "particle_size_range_reported"],
-    applicationsCharacteristics: ["Applications and Reported Characteristics", "applications_and_reported_characteristics"],
-    maxServiceTemperature: ["Maximum Service Temperature (°C)", "max_service_temp_c"],
-    maxServiceTemperatureF: ["Maximum Service Temperature (°F)", "max_service_temp_f"],
-    densityMin: ["Density Min (g/cm³)", "density_min_g_cm3"],
-    densityMax: ["Density Max (g/cm³)", "density_max_g_cm3"],
-    densityReported: ["Density Value Reported", "Density (g/cm³)", "density_value_reported"],
-    densityType: ["Density Type", "density_type"],
-    meltingPointMin: ["Melting Point Min (°C)", "melting_point_min_c"],
-    meltingPointMax: ["Melting Point Max (°C)", "melting_point_max_c"],
-    meltingPointReported: ["Melting Point Reported", "Melting Point (°C)", "melting_point_reported"],
-    hardnessValue: ["Hardness Value", "hardness_value"],
-    hardnessScaleLoad: ["Hardness Scale and Load", "hardness_scale_load"],
-    classification: ["Classification", "classification"],
-    color: ["Color", "color"],
-    sourcePage: ["Source Page Section", "Source Page", "source_page_section"],
-    catalogUrl: ["Catalog URL", "catalog_url"],
-    accessDate: ["Access Date", "access_date"],
-    notes: ["Data Quality Note", "Notes", "data_quality_note"],
-    youngsModulusMin: ["Young's Modulus Min (GPa)", "young_modulus_min_gpa"],
-    youngsModulusMax: ["Young's Modulus Max (GPa)", "young_modulus_max_gpa"],
-    yieldStressMin: ["Yield Stress Min (MPa)", "yield_stress_min_mpa"],
-    yieldStressMax: ["Yield Stress Max (MPa)", "yield_stress_max_mpa"],
-    compressiveStrengthMin: ["Compressive Strength Min (MPa)", "compressive_strength_min_mpa"],
-    compressiveStrengthMax: ["Compressive Strength Max (MPa)", "compressive_strength_max_mpa"],
-    tensileStrengthMin: ["Tensile Strength Min (MPa)", "tensile_strength_min_mpa"],
-    tensileStrengthMax: ["Tensile Strength Max (MPa)", "tensile_strength_max_mpa"],
-    fractureToughnessMin: ["Fracture Toughness Min (MPa·m^0.5)", "fracture_toughness_min_mpa_sqrt_m"],
-    fractureToughnessMax: ["Fracture Toughness Max (MPa·m^0.5)", "fracture_toughness_max_mpa_sqrt_m"],
-    softeningTemperatureMin: ["Softening Temperature Min (°C)", "softening_temperature_min_c"],
-    softeningTemperatureMax: ["Softening Temperature Max (°C)", "softening_temperature_max_c"],
-    abbreviation: ["Abbreviation", "abbreviation"],
-    applications: ["Applications", "Intended Applications", "applications"],
-    flammabilityRating: ["Flammability Rating", "flammability_rating"],
-    freshWaterRating: ["Fresh Water Rating", "fresh_water_rating"],
-    saltWaterRating: ["Salt Water Rating", "salt_water_rating"],
-    sunlightUvRating: ["Sunlight/UV Rating", "sunlight_uv_rating"],
-    wearResistanceRating: ["Wear Resistance Rating", "wear_resistance_rating"],
-    environmentRatingScale: ["Environment Rating Scale", "environment_rating_scale"],
-    compatibleShapingProcesses: ["Compatible Shaping Processes", "compatible_shaping_processes"],
-    atomicSymbol: ["Atomic Symbol", "atomic_symbol"],
-    atomicNumber: ["Atomic Number", "atomic_number"],
-    relativeAtomicWeight: ["Relative Atomic Weight", "relative_atomic_weight"],
-    crystalStructure: ["Crystal Structure at 20°C", "crystal_structure_20c"],
-    latticeConstantAB: ["Lattice Constant a/b (Å)", "lattice_constant_a_b_angstrom"],
-    latticeConstantC: ["Lattice Constant c (Å)", "lattice_constant_c_angstrom"],
-    electrodePotential: ["Electrode Potential (V)", "electrode_potential_v"],
-    electrodeReaction: ["Electrode Reaction", "electrode_reaction"],
-    oxidationProduct: ["Oxidation Product", "oxidation_product"],
-    oxidationFreeEnergy: ["Oxidation Free Energy (kJ/mol O₂)", "oxidation_free_energy_kj_per_mol_o2"],
-    additionalSourcePage: ["Additional Source Page Section", "additional_source_page_section"]
+        "URL"
+    ]
 };
 
 
@@ -285,23 +222,6 @@ function list(value) {
         .split(/[;|]/)
         .map(clean)
         .filter(Boolean);
-}
-
-
-/* Formats a minimum/maximum pair without discarding either endpoint. */
-function rangeText(minimum, maximum, unit) {
-    const low = clean(minimum);
-    const high = clean(maximum);
-
-    if (low && high) {
-        return low === high
-            ? `${low} ${unit}`
-            : `${low}–${high} ${unit}`;
-    }
-
-    if (low) return `${low} ${unit}`;
-    if (high) return `${high} ${unit}`;
-    return "";
 }
 
 
@@ -487,6 +407,14 @@ function spreadsheetMaterials() {
                             dateAdded: file.dateAdded
                         };
 
+                        if (window.VarcoSchema) {
+                            Object.assign(
+                                record,
+                                window.VarcoSchema.rowToMaterial(headers, row)
+                            );
+                            record.name = record.name || name;
+                        }
+
 
                         /*
                            Read the remaining supported fields.
@@ -497,65 +425,9 @@ function spreadsheetMaterials() {
                                     headers,
                                     row,
                                     field
-                                );
+                                ) || record[field] || "";
                             }
                         });
-
-
-                        /*
-                           Preserve every non-empty source column, including
-                           headings introduced by future CSV versions.
-                        */
-                        record.rawProperties = {};
-
-                        headers.forEach((header, columnIndex) => {
-                            const heading = clean(header);
-                            const value = clean(row[columnIndex]);
-
-                            if (heading && value) {
-                                record.rawProperties[heading] = value;
-                            }
-                        });
-
-
-                        /* Convenient display values derived from ranges. */
-                        record.density =
-                            record.densityReported ||
-                            rangeText(
-                                record.densityMin,
-                                record.densityMax,
-                                "g/cm³"
-                            );
-
-                        record.meltingPoint =
-                            record.meltingPointReported ||
-                            rangeText(
-                                record.meltingPointMin,
-                                record.meltingPointMax,
-                                "°C"
-                            );
-
-                        record.youngsModulus = rangeText(
-                            record.youngsModulusMin,
-                            record.youngsModulusMax,
-                            "GPa"
-                        );
-
-                        record.tensileStrength = rangeText(
-                            record.tensileStrengthMin,
-                            record.tensileStrengthMax,
-                            "MPa"
-                        );
-
-                        record.fractureToughness = rangeText(
-                            record.fractureToughnessMin,
-                            record.fractureToughnessMax,
-                            "MPa·m^0.5"
-                        );
-
-                        if (!record.category) {
-                            record.category = record.classification;
-                        }
 
 
                         /*
@@ -658,21 +530,14 @@ function includesList(value, selected) {
    Combines all material fields into one searchable line.
 */
 function searchableText(material) {
-    const values = [];
-
-    function collect(value) {
-        if (Array.isArray(value)) {
-            value.forEach(collect);
-        } else if (value && typeof value === "object") {
-            Object.values(value).forEach(collect);
-        } else {
-            values.push(value);
-        }
-    }
-
-    collect(material);
-
-    return values.join(" ").toLowerCase();
+    return Object.values(material)
+        .flatMap((value) =>
+            Array.isArray(value)
+                ? value
+                : [value]
+        )
+        .join(" ")
+        .toLowerCase();
 }
 
 
@@ -1085,38 +950,19 @@ function updateSummary() {
    ========================================================= */
 
 async function initialize() {
-    const manualRecords =
-        manualMaterials();
-
-    const spreadsheetRecords =
-        await spreadsheetMaterials();
-
     let sharedRecords = [];
-
     try {
         sharedRecords = window.varcoApi
             ? await window.varcoApi.listMaterials()
             : [];
     } catch (error) {
-        console.error(
-            "Shared materials could not be loaded:",
-            error
-        );
+        console.error("Shared materials could not be loaded:", error);
     }
 
 
-    /*
-       Combine both record sources into one catalog.
-    */
-    state.materials = [
-        ...sharedRecords,
-        ...manualRecords,
-        ...spreadsheetRecords
-    ].filter((material, index, records) =>
-        records.findIndex((candidate) =>
-            candidate.id === material.id
-        ) === index
-    );
+    // Supabase is the only material-record source. Local browser records are
+    // not merged because they differ by device and survive shared deletion.
+    state.materials = sharedRecords;
 
 
     /*

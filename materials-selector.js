@@ -22,8 +22,8 @@ const COMPARE_KEY = "varcoComparisonMaterials";
    ========================================================= */
 
 const aliases = {
-  name: ["Material Name", "Name", "Material", "Powder Name", "Material Designation", "Feedstock Name"],
-  category: ["Category", "Material Category", "Classification", "Class"],
+  name: ["Material Name", "Name"],
+  category: ["Category", "Material Category"],
   composition: [
     "Composition as Reported",
     "Composition",
@@ -50,9 +50,6 @@ const aliases = {
   morphology: ["Morphology", "Particle Morphology"],
   apparentDensity: ["Apparent Density (g/cm³)", "Apparent Density"],
   density: ["Density (g/cm³)", "Density", "Material Density"],
-  densityMin: ["Density Min (g/cm³)", "Density Minimum (g/cm³)", "density_min_g_cm3"],
-  densityMax: ["Density Max (g/cm³)", "Density Maximum (g/cm³)", "density_max_g_cm3"],
-  densityReported: ["Density Value Reported", "Density as Reported", "density_value_reported"],
   porosity: ["Porosity (%)", "Porosity"],
   hardnessValue: ["Hardness Value", "Hardness"],
   hardnessScaleLoad: ["Hardness Scale and Load", "Hardness Scale"],
@@ -62,26 +59,8 @@ const aliases = {
     "Youngs Modulus",
     "Young's Modulus",
   ],
-  youngsModulusMin: ["Young's Modulus Min (GPa)", "Young’s Modulus Min (GPa)", "young_modulus_min_gpa"],
-  youngsModulusMax: ["Young's Modulus Max (GPa)", "Young’s Modulus Max (GPa)", "young_modulus_max_gpa"],
   tensileStrength: ["Tensile Strength (MPa)", "Tensile Strength"],
-  tensileStrengthMin: ["Tensile Strength Min (MPa)", "tensile_strength_min_mpa"],
-  tensileStrengthMax: ["Tensile Strength Max (MPa)", "tensile_strength_max_mpa"],
   meltingPoint: ["Melting Point (°C)", "Melting Point"],
-  meltingPointMin: ["Melting Point Min (°C)", "Melting Temperature Min (°C)", "melting_point_min_c"],
-  meltingPointMax: ["Melting Point Max (°C)", "Melting Temperature Max (°C)", "melting_point_max_c"],
-  meltingPointReported: ["Melting Point Reported", "Melting Point as Reported", "melting_point_reported"],
-  yieldStressMin: ["Yield Stress Min (MPa)", "yield_stress_min_mpa"],
-  yieldStressMax: ["Yield Stress Max (MPa)", "yield_stress_max_mpa"],
-  compressiveStrengthMin: ["Compressive Strength Min (MPa)", "compressive_strength_min_mpa"],
-  compressiveStrengthMax: ["Compressive Strength Max (MPa)", "compressive_strength_max_mpa"],
-  fractureToughnessMin: ["Fracture Toughness Min (MPa·m^0.5)", "fracture_toughness_min_mpa_sqrt_m"],
-  fractureToughnessMax: ["Fracture Toughness Max (MPa·m^0.5)", "fracture_toughness_max_mpa_sqrt_m"],
-  softeningTemperatureMin: ["Softening Temperature Min (°C)", "softening_temperature_min_c"],
-  softeningTemperatureMax: ["Softening Temperature Max (°C)", "softening_temperature_max_c"],
-  crystalStructure: ["Crystal Structure at 20°C", "Crystal Structure", "crystal_structure_20c"],
-  classification: ["Classification", "classification"],
-  applications: ["Applications", "Intended Applications", "applications"],
   supplier: ["Supplier", "Manufacturer"],
   productName: ["Product Name"],
   sprayProcesses: ["Recommended Spray Processes", "Recommended Spray Process"],
@@ -201,15 +180,6 @@ function valueFromRow(headers, row, field) {
   const index = headers.findIndex((header) => accepted.includes(key(header)));
   return index >= 0 ? clean(row[index]) : "";
 }
-function preserveCompleteRow(headers, row) {
-  const complete = {};
-  headers.forEach((header, index) => {
-    const heading = clean(header);
-    const value = clean(row[index]);
-    if (heading && value) complete[heading] = value;
-  });
-  return complete;
-}
 function openDatabase(name, version, onUpgrade) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(name, version);
@@ -249,16 +219,16 @@ async function spreadsheetMaterials() {
           name,
           origin: "csv",
           dateAdded: file.dateAdded,
-          importedFields: preserveCompleteRow(headers, row),
         };
-        Object.assign(record, record.importedFields);
+        if (window.VarcoSchema) {
+          Object.assign(record, window.VarcoSchema.rowToMaterial(headers, row));
+          record.name = record.name || name;
+        }
         Object.keys(aliases).forEach((field) => {
           if (field !== "name")
-            record[field] = valueFromRow(headers, row, field);
+            record[field] = valueFromRow(headers, row, field) || record[field] || "";
         });
         record.manufacturingMethods = list(record.manufacturingMethods);
-        record.density = record.density || record.densityReported;
-        record.meltingPoint = record.meltingPoint || record.meltingPointReported;
         if (!record.sourceTitle) record.sourceTitle = file.name;
         if (!record.sourceFilename) record.sourceFilename = file.name;
         records.push(record);
@@ -595,9 +565,7 @@ function renderCards() {
       ),
       fact(
         "Density",
-        clean(material.density)
-          ? `${material.density} g/cm³`
-          : formatRange(material.densityMin, material.densityMax, "g/cm³"),
+        clean(material.density) ? `${material.density} g/cm³` : "",
       ),
       fact("Supplier", material.supplier),
     );
@@ -625,7 +593,7 @@ const comparisonRows = [
     "Particle Size",
     (m) => formatRange(m.particleSizeMin, m.particleSizeMax, "µm"),
   ],
-  ["Density", (m) => clean(m.density) ? `${m.density} g/cm³` : formatRange(m.densityMin, m.densityMax, "g/cm³")],
+  ["Density", (m) => m.density || formatRange(m.densityMin, m.densityMax, "g/cm³")],
   [
     "Hardness",
     (m) =>
@@ -635,11 +603,14 @@ const comparisonRows = [
   ],
   [
     "Young’s Modulus",
-    (m) => clean(m.youngsModulus) ? `${m.youngsModulus} GPa` : formatRange(m.youngsModulusMin, m.youngsModulusMax, "GPa"),
+    (m) => m.youngsModulus || formatRange(m.youngsModulusMin, m.youngsModulusMax, "GPa"),
   ],
-  ["Tensile Strength", (m) => clean(m.tensileStrength) ? `${m.tensileStrength} MPa` : formatRange(m.tensileStrengthMin, m.tensileStrengthMax, "MPa")],
-  ["Melting Point", (m) => clean(m.meltingPoint) ? `${m.meltingPoint} °C` : formatRange(m.meltingPointMin, m.meltingPointMax, "°C")],
+  ["Tensile Strength", (m) => m.tensileStrength || formatRange(m.tensileStrengthMin, m.tensileStrengthMax, "MPa")],
+  ["Fracture Toughness", (m) => m.fractureToughness || formatRange(m.fractureToughnessMin, m.fractureToughnessMax, "MPa·m^0.5")],
+  ["Melting Point", (m) => m.meltingPoint || formatRange(m.meltingPointMin, m.meltingPointMax, "°C")],
+  ["Softening Temperature", (m) => formatRange(m.softeningTemperatureMin, m.softeningTemperatureMax, "°C")],
   ["Crystal Structure", (m) => m.crystalStructure],
+  ["Wear Resistance", (m) => m.wearResistanceRating],
   ["Supplier", (m) => m.supplier],
   ["Source / Article", (m) => m.documentLink],
 ];
@@ -722,15 +693,12 @@ async function initialize() {
   } catch (error) {
     console.error("Shared materials could not be loaded.", error);
   }
-  state.materials = [
-    ...shared,
-    ...manualMaterials(),
-    ...(await spreadsheetMaterials()),
-  ]
-    .filter((material, index, records) =>
-      records.findIndex((candidate) => candidate.id === material.id) === index,
-    )
-    .map((m) => ({ ...m, _imageFile: images.get(m.id) || null }));
+  // Supabase is the only material-record source. IndexedDB/localStorage are
+  // retained only for local UI assets such as comparison state and images.
+  state.materials = shared.map((m) => ({
+    ...m,
+    _imageFile: images.get(m.id) || null,
+  }));
   state.selected = new Set(
     [...state.selected].filter((id) =>
       state.materials.some((m) => m.id === id),

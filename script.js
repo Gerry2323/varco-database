@@ -288,51 +288,6 @@ const csvFieldAliases = {
     notes: ["Notes"]
 };
 
-/* Rich fields used by the 72-column VARCO workbook. Keeping these aliases on
-   the homepage makes this file work even when no separate schema helper is
-   loaded by index.html. */
-Object.assign(csvFieldAliases, {
-    recordId: ["record_id", "Record ID"],
-    recordType: ["record_type", "Record Type"],
-    dataSourceGroup: ["data_source_group", "Data Source Group"],
-    parentMaterial: ["parent_material", "Parent Material"],
-    powderFamily: ["powder_family", "Powder Family"],
-    densityMin: ["density_min_g_cm3", "Density Min (g/cm³)"],
-    densityMax: ["density_max_g_cm3", "Density Max (g/cm³)"],
-    densityReported: ["density_value_reported", "Density Value Reported"],
-    densityType: ["density_type", "Density Type"],
-    meltingPointMin: ["melting_point_min_c", "Melting Point Min (°C)"],
-    meltingPointMax: ["melting_point_max_c", "Melting Point Max (°C)"],
-    meltingPointReported: ["melting_point_reported", "Melting Point Reported"],
-    youngsModulusMin: ["young_modulus_min_gpa", "Young's Modulus Min (GPa)"],
-    youngsModulusMax: ["young_modulus_max_gpa", "Young's Modulus Max (GPa)"],
-    yieldStressMin: ["yield_stress_min_mpa", "Yield Stress Min (MPa)"],
-    yieldStressMax: ["yield_stress_max_mpa", "Yield Stress Max (MPa)"],
-    compressiveStrengthMin: ["compressive_strength_min_mpa", "Compressive Strength Min (MPa)"],
-    compressiveStrengthMax: ["compressive_strength_max_mpa", "Compressive Strength Max (MPa)"],
-    tensileStrengthMin: ["tensile_strength_min_mpa", "Tensile Strength Min (MPa)"],
-    tensileStrengthMax: ["tensile_strength_max_mpa", "Tensile Strength Max (MPa)"],
-    fractureToughnessMin: ["fracture_toughness_min_mpa_sqrt_m", "Fracture Toughness Min (MPa·m^0.5)"],
-    fractureToughnessMax: ["fracture_toughness_max_mpa_sqrt_m", "Fracture Toughness Max (MPa·m^0.5)"],
-    softeningTemperatureMin: ["softening_temperature_min_c", "Softening Temperature Min (°C)"],
-    softeningTemperatureMax: ["softening_temperature_max_c", "Softening Temperature Max (°C)"],
-    crystalStructure: ["crystal_structure_20c", "Crystal Structure at 20°C"],
-    latticeConstantAB: ["lattice_constant_a_b_angstrom", "Lattice Constant a/b (Å)"],
-    latticeConstantC: ["lattice_constant_c_angstrom", "Lattice Constant c (Å)"],
-    flammabilityRating: ["flammability_rating", "Flammability Rating"],
-    freshWaterRating: ["fresh_water_rating", "Fresh Water Rating"],
-    saltWaterRating: ["salt_water_rating", "Salt Water Rating"],
-    sunlightUvRating: ["sunlight_uv_rating", "Sunlight/UV Rating"],
-    wearResistanceRating: ["wear_resistance_rating", "Wear Resistance Rating"],
-    compatibleShapingProcesses: ["compatible_shaping_processes", "Compatible Shaping Processes"],
-    atomicSymbol: ["atomic_symbol", "Atomic Symbol"],
-    atomicNumber: ["atomic_number", "Atomic Number"],
-    relativeAtomicWeight: ["relative_atomic_weight", "Relative Atomic Weight"],
-    electrodePotential: ["electrode_potential_v", "Electrode Potential (V)"],
-    electrodeReaction: ["electrode_reaction", "Electrode Reaction"],
-    oxidationProduct: ["oxidation_product", "Oxidation Product"]
-});
-
 function comparableHeader(value) {
     return String(value ?? "")
         .toLowerCase()
@@ -352,31 +307,10 @@ function splitCsvList(value) {
         .filter(Boolean);
 }
 
-function reportedRange(minimum, maximum, unit) {
-    const low = String(minimum ?? "").trim();
-    const high = String(maximum ?? "").trim();
-    const missing = new Set(["", "Not Reported", "Not specified", "N/A"]);
-    const hasLow = !missing.has(low);
-    const hasHigh = !missing.has(high);
-
-    if (hasLow && hasHigh) {
-        return low === high ? `${low} ${unit}` : `${low}–${high} ${unit}`;
-    }
-    if (hasLow) return `${low} ${unit}`;
-    if (hasHigh) return `${high} ${unit}`;
-    return "Not Reported";
-}
-
 function csvRowToMaterial(headers, row, file, rowIndex) {
-    const record = { rawProperties: {} };
-
-    /* Preserve every non-empty source column, including columns introduced by
-       future CSV files that this version does not know by name yet. */
-    headers.forEach(function (header, columnIndex) {
-        const heading = String(header ?? "").trim();
-        const value = String(row[columnIndex] ?? "").trim();
-        if (heading && value) record.rawProperties[heading] = value;
-    });
+    const record = window.VarcoSchema
+        ? window.VarcoSchema.rowToMaterial(headers, row)
+        : {};
 
     Object.entries(csvFieldAliases).forEach(function ([key, aliases]) {
         const accepted = aliases.map(comparableHeader);
@@ -388,30 +322,8 @@ function csvRowToMaterial(headers, row, file, rowIndex) {
         record[key] =
             columnIndex >= 0
                 ? String(row[columnIndex] ?? "").trim() || "Not Reported"
-                : "Not Reported";
+                : record[key] || "Not Reported";
     });
-
-    record.density = record.densityReported !== "Not Reported"
-        ? record.densityReported
-        : reportedRange(record.densityMin, record.densityMax, "g/cm³");
-    record.meltingPoint = record.meltingPointReported !== "Not Reported"
-        ? record.meltingPointReported
-        : reportedRange(record.meltingPointMin, record.meltingPointMax, "°C");
-    record.youngsModulus = reportedRange(
-        record.youngsModulusMin,
-        record.youngsModulusMax,
-        "GPa"
-    );
-    record.tensileStrength = reportedRange(
-        record.tensileStrengthMin,
-        record.tensileStrengthMax,
-        "MPa"
-    );
-    record.fractureToughness = reportedRange(
-        record.fractureToughnessMin,
-        record.fractureToughnessMax,
-        "MPa·m^0.5"
-    );
 
     /*
         Recover the material name when an older imported
@@ -568,22 +480,10 @@ function loadCsvMaterials() {
 }
 
 function allMaterials() {
-    const unique = new Map();
-
-    [...materials, ...csvMaterials].forEach(function (material) {
-        const recordId = String(material.recordId || "").trim().toLowerCase();
-        const name = String(material.name || "").trim().toLowerCase();
-        const source = String(
-            material.sourceFilename || material.sourceTitle || ""
-        ).trim().toLowerCase();
-        const key = recordId || `${name}|${source}` || String(material.id);
-
-        /* Supabase records are processed first and therefore remain the
-           authoritative copy when the same CSV also exists in IndexedDB. */
-        if (!unique.has(key)) unique.set(key, material);
-    });
-
-    return Array.from(unique.values());
+    // Supabase is the single source of truth for material records.
+    // Browser-local spreadsheet rows are intentionally excluded because
+    // combining them creates duplicate and device-dependent counts.
+    return materials;
 }
 
 /* =========================================================
@@ -1386,7 +1286,7 @@ async function initializeMaterialsPage() {
         );
     }
 
-    csvMaterials = await loadCsvMaterials();
+    csvMaterials = [];
 
     renderMaterials();
     updateDashboard();

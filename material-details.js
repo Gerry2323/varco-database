@@ -344,36 +344,6 @@ function valueFromRow(headers, row, fieldName) {
     return clean(row[columnIndex]);
 }
 
-/*
-   Returns the first non-empty value whose heading matches one of
-   the supplied names. This supports rich CSV headings without
-   discarding their original spelling or units.
-*/
-function valueFromRecord(record, headings) {
-    const wanted = headings.map(normalizeHeading);
-
-    for (const [heading, value] of Object.entries(record || {})) {
-        if (wanted.includes(normalizeHeading(heading)) && clean(value)) {
-            return value;
-        }
-    }
-
-    return "";
-}
-
-function rangeText(minimum, maximum, unit) {
-    const min = clean(minimum);
-    const max = clean(maximum);
-
-    if (min && max) {
-        return min === max
-            ? withUnit(min, unit)
-            : `${withUnit(min, unit)} – ${withUnit(max, unit)}`;
-    }
-
-    return withUnit(min || max, unit);
-}
-
 
 /* =========================================================
    STANDARDIZE ONE MATERIAL RECORD
@@ -383,19 +353,6 @@ function rangeText(minimum, maximum, unit) {
    ========================================================= */
 
 function standardizeMaterial(record, id, origin) {
-    const densityMin = firstValue(record, ["densityMin", "density_min_g_cm3"]) ||
-        valueFromRecord(record, ["Density Min (g/cm³)", "Density Min"]);
-    const densityMax = firstValue(record, ["densityMax", "density_max_g_cm3"]) ||
-        valueFromRecord(record, ["Density Max (g/cm³)", "Density Max"]);
-    const meltingPointMin = firstValue(record, ["meltingPointMin", "melting_point_min_c"]) ||
-        valueFromRecord(record, ["Melting Point Min (°C)", "Melting Temperature Min (°C)"]);
-    const meltingPointMax = firstValue(record, ["meltingPointMax", "melting_point_max_c"]) ||
-        valueFromRecord(record, ["Melting Point Max (°C)", "Melting Temperature Max (°C)"]);
-    const youngsModulusMin = firstValue(record, ["youngsModulusMin", "young_modulus_min_gpa"]) ||
-        valueFromRecord(record, ["Young's Modulus Min (GPa)"]);
-    const youngsModulusMax = firstValue(record, ["youngsModulusMax", "young_modulus_max_gpa"]) ||
-        valueFromRecord(record, ["Young's Modulus Max (GPa)"]);
-
     return {
         ...record,
 
@@ -496,23 +453,15 @@ function standardizeMaterial(record, id, origin) {
             ["country", "countryOfOrigin"]
         ),
 
-        densityMin,
-
-        densityMax,
-
         density: firstValue(
             record,
-            ["density", "densityReported", "density_value_reported"]
-        ) || rangeText(densityMin, densityMax, "g/cm³"),
+            ["density"]
+        ),
 
         hardness: firstValue(
             record,
             ["hardness"]
         ),
-
-        youngsModulusMin,
-
-        youngsModulusMax,
 
         youngsModulus: firstValue(
             record,
@@ -521,16 +470,12 @@ function standardizeMaterial(record, id, origin) {
                 "youngModulus",
                 "elasticModulus"
             ]
-        ) || rangeText(youngsModulusMin, youngsModulusMax, "GPa"),
-
-        meltingPointMin,
-
-        meltingPointMax,
+        ),
 
         meltingPoint: firstValue(
             record,
-            ["meltingPoint", "meltingPointReported", "melting_point_reported"]
-        ) || rangeText(meltingPointMin, meltingPointMax, "°C"),
+            ["meltingPoint"]
+        ),
 
         thermalConductivity: firstValue(
             record,
@@ -687,17 +632,9 @@ function materialFromSpreadsheetRow(
     row,
     rowNumber
 ) {
-    const record = {};
-
-    /* Preserve every non-empty source column, including future fields. */
-    headers.forEach((heading, index) => {
-        const label = clean(heading);
-        const value = clean(row[index]);
-
-        if (label && value) {
-            record[label] = value;
-        }
-    });
+    const record = window.VarcoSchema
+        ? window.VarcoSchema.rowToMaterial(headers, row)
+        : {};
 
     Object.keys(FIELD_ALIASES).forEach(
         (fieldName) => {
@@ -705,7 +642,7 @@ function materialFromSpreadsheetRow(
                 headers,
                 row,
                 fieldName
-            );
+            ) || record[fieldName] || "";
         }
     );
 
@@ -1123,70 +1060,6 @@ function displayStandards(value) {
     container.appendChild(listElement);
 }
 
-/*
-   Adds a complete record table using the original imported headings.
-   It is created in JavaScript, so material-details.html does not need
-   to be changed for this step.
-*/
-function displayCompleteRecord(material) {
-    if (!elements.content) {
-        return;
-    }
-
-    const oldSection = document.getElementById("complete-imported-record");
-    oldSection?.remove();
-
-    const hiddenKeys = new Set([
-        "id", "origin", "manufacturingMethods", "sprayProcesses"
-    ]);
-    const entries = Object.entries(material).filter(([key, value]) =>
-        !hiddenKeys.has(key) &&
-        !key.startsWith("_") &&
-        clean(Array.isArray(value) ? value.join(", ") : value)
-    );
-
-    if (!entries.length) {
-        return;
-    }
-
-    const section = document.createElement("section");
-    section.id = "complete-imported-record";
-    section.className = "detail-section complete-imported-record";
-
-    const heading = document.createElement("h3");
-    heading.textContent = "Complete Imported Record";
-
-    const explanation = document.createElement("p");
-    explanation.textContent =
-        "All non-empty properties preserved from the uploaded file are shown below.";
-
-    const table = document.createElement("table");
-    table.className = "material-record-table";
-    const body = document.createElement("tbody");
-
-    entries.forEach(([key, value]) => {
-        const row = document.createElement("tr");
-        const labelCell = document.createElement("th");
-        const valueCell = document.createElement("td");
-
-        labelCell.scope = "row";
-        labelCell.textContent = key
-            .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (letter) => letter.toUpperCase());
-        valueCell.textContent = Array.isArray(value)
-            ? value.join(", ")
-            : clean(value);
-
-        row.append(labelCell, valueCell);
-        body.appendChild(row);
-    });
-
-    table.appendChild(body);
-    section.append(heading, explanation, table);
-    elements.content.appendChild(section);
-}
-
 
 /* =========================================================
    DISPLAY THE SELECTED MATERIAL
@@ -1432,7 +1305,27 @@ function displayMaterial(material) {
             "No notes have been added."
     );
 
-    displayCompleteRecord(material);
+    const importedCard = document.getElementById("detail-imported-fields-card");
+    const importedFields = document.getElementById("detail-imported-fields");
+    if (importedCard && importedFields) {
+        importedFields.textContent = "";
+        const entries = Object.entries(material.rawProperties || {})
+            .filter(([, value]) => clean(value))
+            .sort(([first], [second]) => first.localeCompare(second));
+
+        entries.forEach(([label, value]) => {
+            const wrapper = document.createElement("div");
+            const term = document.createElement("dt");
+            const description = document.createElement("dd");
+            wrapper.className = "detail-property";
+            term.textContent = label.replace(/_/g, " ");
+            description.textContent = value;
+            wrapper.append(term, description);
+            importedFields.appendChild(wrapper);
+        });
+
+        importedCard.hidden = entries.length === 0;
+    }
 
 
     /*
@@ -1572,36 +1465,20 @@ async function initializeMaterialDetails() {
     elements.status.textContent =
         "Loading material details...";
 
-    const manualRecords =
-        manualMaterials();
-
-    const spreadsheetRecords =
-        await spreadsheetMaterials();
-
     let sharedRecords = [];
-
     try {
         sharedRecords = window.varcoApi
             ? (await window.varcoApi.listMaterials()).map((material) =>
-                standardizeMaterial(
-                    material,
-                    material.id,
-                    material.origin || "shared"
-                )
+                standardizeMaterial(material, material.id, material.origin || "shared")
             )
             : [];
     } catch (error) {
-        console.error(
-            "Shared materials could not be loaded.",
-            error
-        );
+        console.error("Shared materials could not be loaded:", error);
     }
 
-    const allMaterials = [
-        ...sharedRecords,
-        ...manualRecords,
-        ...spreadsheetRecords
-    ];
+    // Material details must resolve from the same shared source used by every
+    // catalog page. Local browser records would make deleted imports reappear.
+    const allMaterials = sharedRecords;
 
     let selectedMaterial =
         allMaterials.find(
