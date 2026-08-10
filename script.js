@@ -308,9 +308,7 @@ function splitCsvList(value) {
 }
 
 function csvRowToMaterial(headers, row, file, rowIndex) {
-    const record = window.VarcoSchema
-        ? window.VarcoSchema.rowToMaterial(headers, row)
-        : {};
+    const record = {};
 
     Object.entries(csvFieldAliases).forEach(function ([key, aliases]) {
         const accepted = aliases.map(comparableHeader);
@@ -322,7 +320,7 @@ function csvRowToMaterial(headers, row, file, rowIndex) {
         record[key] =
             columnIndex >= 0
                 ? String(row[columnIndex] ?? "").trim() || "Not Reported"
-                : record[key] || "Not Reported";
+                : "Not Reported";
     });
 
     /*
@@ -480,10 +478,7 @@ function loadCsvMaterials() {
 }
 
 function allMaterials() {
-    // Supabase is the single source of truth for material records.
-    // Browser-local spreadsheet rows are intentionally excluded because
-    // combining them creates duplicate and device-dependent counts.
-    return materials;
+    return [...materials, ...csvMaterials];
 }
 
 /* =========================================================
@@ -1286,7 +1281,7 @@ async function initializeMaterialsPage() {
         );
     }
 
-    csvMaterials = [];
+    csvMaterials = await loadCsvMaterials();
 
     renderMaterials();
     updateDashboard();

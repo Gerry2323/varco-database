@@ -78,7 +78,8 @@ const FIELD_ALIASES = {
 
     morphology: [
         "particle morphology",
-        "morphology"
+        "morphology",
+        "morphologies"
     ],
 
     supplier: [
@@ -104,23 +105,121 @@ const FIELD_ALIASES = {
     ],
 
     density: [
-        "density"
+        "density",
+        "density value reported"
+    ],
+
+    densityMin: [
+        "density min g cm3", "density min", "minimum density"
+    ],
+
+    densityMax: [
+        "density max g cm3", "density max", "maximum density"
+    ],
+
+    densityReported: [
+        "density value reported", "density as reported"
+    ],
+
+    densityType: [
+        "density type"
     ],
 
     hardness: [
-        "hardness"
+        "hardness",
+        "hardness value"
     ],
 
     youngsModulus: [
         "young's modulus",
+        "young s modulus",
         "youngs modulus",
         "elastic modulus"
     ],
 
+    youngsModulusMin: [
+        "young modulus min gpa",
+        "young modulus min",
+        "youngs modulus min",
+        "young's modulus min",
+        "young s modulus min"
+    ],
+
+    youngsModulusMax: [
+        "young modulus max gpa",
+        "young modulus max",
+        "youngs modulus max",
+        "young's modulus max",
+        "young s modulus max"
+    ],
+
+    yieldStrengthMin: [
+        "yield stress min mpa", "yield strength min"
+    ],
+
+    yieldStrengthMax: [
+        "yield stress max mpa", "yield strength max"
+    ],
+
+    compressiveStrengthMin: [
+        "compressive strength min mpa", "compressive strength min"
+    ],
+    compressiveStrengthMax: [
+        "compressive strength max mpa", "compressive strength max"
+    ],
+    tensileStrengthMin: [
+        "tensile strength min mpa", "tensile strength min"
+    ],
+    tensileStrengthMax: [
+        "tensile strength max mpa", "tensile strength max"
+    ],
+    fractureToughnessMin: [
+        "fracture toughness min mpa sqrt m", "fracture toughness min"
+    ],
+    fractureToughnessMax: [
+        "fracture toughness max mpa sqrt m", "fracture toughness max"
+    ],
+    softeningTemperatureMin: [
+        "softening temperature min c", "softening temperature min"
+    ],
+    softeningTemperatureMax: [
+        "softening temperature max c", "softening temperature max"
+    ],
+    maxServiceTemperature: [
+        "max service temp c", "maximum service temperature c",
+        "maximum service temperature"
+    ],
+    applications: ["applications", "applications and reported characteristics"],
+    environmentalRatingScale: ["environment rating scale"],
+    flammabilityRating: ["flammability rating"],
+    freshWaterRating: ["fresh water rating"],
+    saltWaterRating: ["salt water rating"],
+    sunlightUvRating: ["sunlight uv rating"],
+    wearResistanceRating: ["wear resistance rating"],
+    atomicSymbol: ["atomic symbol"],
+    atomicNumber: ["atomic number"],
+    relativeAtomicWeight: ["relative atomic weight"],
+    crystalStructure: ["crystal structure 20c"],
+    latticeConstantAB: ["lattice constant a b angstrom"],
+    latticeConstantC: ["lattice constant c angstrom"],
+    evidenceClass: ["evidence class"],
+    dataQualityNote: ["data quality note"],
+    sourcePageSection: ["source page section", "additional source page section"],
+    sourceUrl: ["source url"],
+
     meltingPoint: [
         "melting point",
-        "melting temperature"
+        "melting temperature",
+        "melting point reported"
     ],
+
+    meltingPointMin: [
+        "melting point min c", "melting point min", "minimum melting point"
+    ],
+    meltingPointMax: [
+        "melting point max c", "melting point max", "maximum melting point"
+    ],
+    meltingPointReported: ["melting point reported", "melting point as reported"],
 
     thermalConductivity: [
         "thermal conductivity"
@@ -257,7 +356,8 @@ function normalizeHeading(value) {
     return clean(value)
         .toLowerCase()
         .replace(/[_-]+/g, " ")
-        .replace(/\([^)]*\)/g, " ")
+        /* Keep unit text inside parentheses so (GPa), (MPa), etc. can match. */
+        .replace(/[()]/g, " ")
         .replace(/[^a-z0-9]+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
@@ -329,6 +429,15 @@ function valueFromRow(headers, row, fieldName) {
 
     const normalizedAliases =
         acceptedHeadings.map(normalizeHeading);
+
+    /* Some uploader versions store each CSV row as an object. */
+    if (row && !Array.isArray(row) && typeof row === "object") {
+        for (const [heading, value] of Object.entries(row)) {
+            if (normalizedAliases.includes(normalizeHeading(heading))) {
+                return clean(value);
+            }
+        }
+    }
 
     const columnIndex = headers.findIndex(
         (heading) =>
@@ -457,6 +566,8 @@ function standardizeMaterial(record, id, origin) {
             record,
             ["density"]
         ),
+        densityMin: firstValue(record, ["densityMin"]),
+        densityMax: firstValue(record, ["densityMax"]),
 
         hardness: firstValue(
             record,
@@ -471,11 +582,45 @@ function standardizeMaterial(record, id, origin) {
                 "elasticModulus"
             ]
         ),
+        youngsModulusMin: firstValue(record, ["youngsModulusMin"]),
+        youngsModulusMax: firstValue(record, ["youngsModulusMax"]),
+
+        yieldStrength: firstValue(record, ["yieldStrength"]),
+        yieldStrengthMin: firstValue(record, ["yieldStrengthMin"]),
+        yieldStrengthMax: firstValue(record, ["yieldStrengthMax"]),
+
+        compressiveStrength: firstValue(record, ["compressiveStrength"]),
+        compressiveStrengthMin: firstValue(record, ["compressiveStrengthMin"]),
+        compressiveStrengthMax: firstValue(record, ["compressiveStrengthMax"]),
+
+        tensileStrength: firstValue(record, ["tensileStrength"]),
+        tensileStrengthMin: firstValue(record, ["tensileStrengthMin"]),
+        tensileStrengthMax: firstValue(record, ["tensileStrengthMax"]),
+
+        fractureToughness: firstValue(record, ["fractureToughness"]),
+        fractureToughnessMin: firstValue(record, ["fractureToughnessMin"]),
+        fractureToughnessMax: firstValue(record, ["fractureToughnessMax"]),
+
+        softeningTemperature: firstValue(record, ["softeningTemperature"]),
+        softeningTemperatureMin: firstValue(record, ["softeningTemperatureMin"]),
+        softeningTemperatureMax: firstValue(record, ["softeningTemperatureMax"]),
+
+        maxServiceTemperature: firstValue(record, ["maxServiceTemperature"]),
+
+        environmentalRatingScale: firstValue(record, ["environmentalRatingScale"]),
+        flammabilityRating: firstValue(record, ["flammabilityRating"]),
+        freshWaterRating: firstValue(record, ["freshWaterRating"]),
+        saltWaterRating: firstValue(record, ["saltWaterRating"]),
+        sunlightUvRating: firstValue(record, ["sunlightUvRating"]),
+        wearResistanceRating: firstValue(record, ["wearResistanceRating"]),
+        environmentalResistance: firstValue(record, ["environmentalResistance"]),
 
         meltingPoint: firstValue(
             record,
             ["meltingPoint"]
         ),
+        meltingPointMin: firstValue(record, ["meltingPointMin"]),
+        meltingPointMax: firstValue(record, ["meltingPointMax"]),
 
         thermalConductivity: firstValue(
             record,
@@ -645,6 +790,44 @@ function materialFromSpreadsheetRow(
             ) || record[fieldName] || "";
         }
     );
+
+    /* Preserve every imported Cambridge column for the All Imported Fields card. */
+    record.rawProperties = {};
+    headers.forEach((header, index) => {
+        const label = clean(header);
+        const value = clean(row[index]);
+        if (label && value) record.rawProperties[label] = value;
+    });
+
+    const reportedRange = (reported, minimum, maximum, unit) => {
+        const low = clean(minimum);
+        const high = clean(maximum);
+        if (low && high) return `Min: ${low} ${unit} | Max: ${high} ${unit}`;
+        if (low) return `Min: ${low} ${unit}`;
+        if (high) return `Max: ${high} ${unit}`;
+        return clean(reported);
+    };
+
+    record.density = reportedRange(record.densityReported, record.densityMin, record.densityMax, "g/cm³") || record.density;
+    record.youngsModulus = reportedRange("", record.youngsModulusMin, record.youngsModulusMax, "GPa") || record.youngsModulus;
+    record.yieldStrength = reportedRange("", record.yieldStrengthMin, record.yieldStrengthMax, "MPa") || record.yieldStrength;
+    record.compressiveStrength = reportedRange("", record.compressiveStrengthMin, record.compressiveStrengthMax, "MPa") || record.compressiveStrength;
+    record.tensileStrength = reportedRange("", record.tensileStrengthMin, record.tensileStrengthMax, "MPa") || record.tensileStrength;
+    record.fractureToughness = reportedRange("", record.fractureToughnessMin, record.fractureToughnessMax, "MPa·√m") || record.fractureToughness;
+    record.softeningTemperature = reportedRange("", record.softeningTemperatureMin, record.softeningTemperatureMax, "°C") || record.softeningTemperature;
+    record.meltingPoint = reportedRange(record.meltingPointReported, record.meltingPointMin, record.meltingPointMax, "°C") || record.meltingPoint;
+
+    const environmentalParts = [
+        ["Fresh water", record.freshWaterRating],
+        ["Salt water", record.saltWaterRating],
+        ["Sunlight/UV", record.sunlightUvRating],
+        ["Flammability", record.flammabilityRating],
+        ["Wear resistance", record.wearResistanceRating]
+    ].filter(([, value]) => clean(value) && clean(value).toLowerCase() !== "not reported")
+      .map(([label, value]) => `${label}: ${clean(value)}`);
+
+    record.environmentalResistance = environmentalParts.join("; ") ||
+        clean(record.environmentalRatingScale);
 
     /*
        Rows without a material name are not material records.
@@ -961,6 +1144,29 @@ function setText(elementId, value) {
         "Not reported";
 }
 
+/* Adds a property row when an older HTML file does not contain it yet. */
+function ensureDetailProperty(elementId, label) {
+    let valueElement = document.getElementById(elementId);
+    if (valueElement) return valueElement;
+
+    const grid = document.querySelector("#detail-youngs-modulus")?.closest(".detail-property-grid");
+    if (!grid) return null;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "detail-property";
+
+    const term = document.createElement("dt");
+    term.textContent = label;
+
+    valueElement = document.createElement("dd");
+    valueElement.id = elementId;
+    valueElement.textContent = "Not reported";
+
+    wrapper.append(term, valueElement);
+    grid.appendChild(wrapper);
+    return valueElement;
+}
+
 
 /*
    Adds a unit only when the value does not already include one.
@@ -1181,6 +1387,11 @@ function displayMaterial(material) {
     /*
        Material properties.
     */
+    ensureDetailProperty(
+        "detail-environmental-resistance",
+        "Environmental Resistance"
+    );
+
     setText(
         "detail-density",
         material.density
@@ -1194,6 +1405,17 @@ function displayMaterial(material) {
     setText(
         "detail-youngs-modulus",
         material.youngsModulus
+    );
+
+    setText("detail-yield-strength", material.yieldStrength);
+    setText("detail-compressive-strength", material.compressiveStrength);
+    setText("detail-tensile-strength", material.tensileStrength);
+    setText("detail-fracture-toughness", material.fractureToughness);
+    setText("detail-environmental-resistance", material.environmentalResistance);
+    setText("detail-softening-temperature", material.softeningTemperature);
+    setText(
+        "detail-max-service-temperature",
+        withUnit(material.maxServiceTemperature, "°C")
     );
 
     setText(
@@ -1476,9 +1698,35 @@ async function initializeMaterialDetails() {
         console.error("Shared materials could not be loaded:", error);
     }
 
-    // Material details must resolve from the same shared source used by every
-    // catalog page. Local browser records would make deleted imports reappear.
-    const allMaterials = sharedRecords;
+    /*
+       Material links created by Current Materials can point to records stored
+       locally in localStorage or IndexedDB. Load those records before looking
+       up the selected ID. Shared/Supabase records are added when available,
+       but they must not replace the browser's uploaded CSV catalog.
+    */
+    const manualRecords = manualMaterials();
+    const spreadsheetRecords = await spreadsheetMaterials();
+    const materialMap = new Map();
+
+    /*
+       Add shared records first, then browser-local records.
+
+       A CSV row and its older shared/Supabase copy can have the same ID.
+       Map.set() keeps the last copy. Local CSV rows contain the complete
+       Cambridge min/max columns, so they must win over an older shared copy
+       that may contain only tensile strength or a few summary properties.
+    */
+    [
+        ...sharedRecords,
+        ...manualRecords,
+        ...spreadsheetRecords
+    ].forEach((material) => {
+        if (material && clean(material.id)) {
+            materialMap.set(material.id, material);
+        }
+    });
+
+    const allMaterials = Array.from(materialMap.values());
 
     let selectedMaterial =
         allMaterials.find(
