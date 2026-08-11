@@ -841,15 +841,13 @@ async function initialize() {
   } catch (error) {
     console.error("Shared materials could not be loaded.", error);
   }
-  state.materials = [
-    ...manualMaterials(),
-    ...(await spreadsheetMaterials()),
-    ...shared,
-  ]
-    .filter((material, index, records) =>
-      records.findIndex((candidate) => candidate.id === material.id) === index,
-    )
-    .map((m) => ({ ...m, _imageFile: images.get(m.id) || null }));
+  // Supabase is the only material-record source. Browser storage remains
+  // available only for local UI state such as comparisons and cached images.
+  // Manual entries created through the site are already saved in Supabase.
+  state.materials = shared.map((m) => ({
+    ...m,
+    _imageFile: images.get(m.id) || null,
+  }));
   state.selected = new Set(
     [...state.selected].filter((id) =>
       state.materials.some((m) => m.id === id),
