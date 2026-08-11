@@ -676,6 +676,10 @@ async function handleFiles(fileList) {
             const materialRowsInFile = hasMaterialTable
                 ? combinedRows.length - 1
                 : 0;
+            const existingFile = savedFiles.find(
+                (savedFile) => savedFile.name.toLowerCase() === file.name.toLowerCase()
+            );
+            let publishedFile = null;
 
             /* Always allow the local import. When an approved teammate is
                signed in, also upload the file and materials to Supabase. */
@@ -713,6 +717,20 @@ async function handleFiles(fileList) {
                             sharedMaterials,
                             uploadedFile.id
                         );
+                        publishedFile = uploadedFile;
+
+                        /* A successful re-upload replaces the previous remote
+                           import only after the new copy is safely published. */
+                        if (
+                            existingFile?.sharedFileId &&
+                            existingFile.sharedFileId !== uploadedFile.id &&
+                            window.varcoApi?.deleteFile
+                        ) {
+                            await window.varcoApi.deleteFile({
+                                id: existingFile.sharedFileId,
+                                storagePath: existingFile.sharedStoragePath
+                            });
+                        }
                         sharedMaterialCount += sharedMaterials.length;
                     } catch (error) {
                         localOnlyMaterialCount += sharedMaterials.length;
@@ -724,9 +742,6 @@ async function handleFiles(fileList) {
             }
 
             const now = new Date().toISOString();
-            const existingFile = savedFiles.find(
-                (savedFile) => savedFile.name.toLowerCase() === file.name.toLowerCase()
-            );
             await putFile({
                 /* Re-uploading the same filename updates it instead of
                    creating a second set of duplicate material records. */
@@ -743,6 +758,12 @@ async function handleFiles(fileList) {
                 })),
                 rows: combinedRows,
                 materialCount: materialRowsInFile,
+                sharedFileId: publishedFile?.id || existingFile?.sharedFileId || "",
+                sharedStoragePath:
+                    publishedFile?.storage_path ||
+                    publishedFile?.storagePath ||
+                    existingFile?.sharedStoragePath ||
+                    "",
                 dateAdded: existingFile ? existingFile.dateAdded : now,
                 dateModified: now
             });
@@ -882,10 +903,25 @@ async function renameSavedFile(file) {
 
 async function deleteSavedFile(file) {
     if (!window.confirm(`Delete "${file.name}"? This cannot be undone.`)) return;
-    await removeFile(file.id);
-    if (activeFile && activeFile.id === file.id) closeViewer();
-    showMessage(`${file.name} was deleted.`);
-    await refreshFileList();
+    try {
+        /* Delete the published import first. If that fails, retain the local
+           record so its Supabase identity is not lost. */
+        if (file.sharedFileId) {
+            if (!window.varcoApi?.deleteFile) {
+                throw new Error("Supabase deletion is unavailable. Refresh and try again.");
+            }
+            await window.varcoApi.deleteFile({
+                id: file.sharedFileId,
+                storagePath: file.sharedStoragePath
+            });
+        }
+        await removeFile(file.id);
+        if (activeFile && activeFile.id === file.id) closeViewer();
+        showMessage(`${file.name} and its imported materials were deleted.`);
+        await refreshFileList();
+    } catch (error) {
+        showMessage(`Nothing was deleted locally: ${error.message}`, true);
+    }
 }
 
 function openViewer(file, startEditing) {

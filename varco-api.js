@@ -159,6 +159,52 @@ window.varcoApi = {
             }));
     },
 
+    /* Read-only inspection for an older import whose local Supabase file ID
+       was lost. The caller can review exact counts before any cleanup. */
+    async inspectImportByFilename(filename) {
+        const exactName = String(filename || "").trim();
+        if (!exactName) throw new Error("Enter the exact uploaded filename.");
+        const files = requireSuccess(await varcoSupabase
+            .from("uploaded_files")
+            .select("*")
+            .eq("file_name", exactName));
+        const materials = requireSuccess(await varcoSupabase
+            .from("materials")
+            .select("id, material_name, source_filename, created_at")
+            .eq("source_filename", exactName));
+        return { filename: exactName, files, materials };
+    },
+
+    /* Deliberately requires the preview's exact row count. This prevents a
+       stale or mistyped console command from deleting a changed import. */
+    async deleteImportByFilename(filename, expectedMaterialCount) {
+        if (!(await this.currentUser())) {
+            throw new Error("Sign in as a teammate before deleting an import.");
+        }
+        const preview = await this.inspectImportByFilename(filename);
+        if (preview.materials.length !== Number(expectedMaterialCount)) {
+            throw new Error(
+                `Cleanup stopped: expected ${expectedMaterialCount} materials, ` +
+                `but found ${preview.materials.length}. Run the preview again.`
+            );
+        }
+        requireSuccess(await varcoSupabase
+            .from("materials")
+            .delete()
+            .eq("source_filename", preview.filename));
+        for (const row of preview.files) {
+            await this.deleteFile({
+                id: row.id,
+                storagePath: row.storage_path
+            });
+        }
+        return {
+            filename: preview.filename,
+            deletedMaterials: preview.materials.length,
+            deletedFiles: preview.files.length
+        };
+    },
+
     async uploadFile(file, metadata) {
         const user = await this.currentUser();
         if (!user) throw new Error("Sign in as a teammate before uploading files.");
@@ -200,14 +246,16 @@ window.varcoApi = {
             target_file_id: file.id
         }));
 
-        const storageResult = await varcoSupabase.storage
-            .from(VARCO_BUCKET)
-            .remove([file.storagePath]);
-        if (storageResult.error) {
-            throw new Error(
-                "The database record was deleted, but the stored file could not be removed. " +
-                storageResult.error.message
-            );
+        if (file.storagePath) {
+            const storageResult = await varcoSupabase.storage
+                .from(VARCO_BUCKET)
+                .remove([file.storagePath]);
+            if (storageResult.error) {
+                throw new Error(
+                    "The database record was deleted, but the stored file could not be removed. " +
+                    storageResult.error.message
+                );
+            }
         }
     },
 

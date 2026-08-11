@@ -484,6 +484,8 @@ function spreadsheetMaterials() {
                             id: `csv:${file.id}:${index + 1}`,
                             name: name,
                             origin: "csv",
+                            spreadsheetRow: index + 2,
+                            sourceFileId: file.sharedFileId || "",
                             dateAdded: file.dateAdded
                         };
 
@@ -1108,15 +1110,43 @@ async function initialize() {
     /*
        Combine both record sources into one catalog.
     */
+    /* Supabase is listed first so its durable copy wins when the same
+       imported row is also present in local IndexedDB.  The fingerprint is
+       source-specific: identical material names from different articles or
+       manufacturer products remain separate comparison records. */
+    function materialFingerprint(material) {
+        const source = clean(
+            material.sourceFilename || material.sourceTitle
+        );
+        const rowIdentity = clean(
+            material.recordId ||
+            material.spreadsheetRow
+        );
+        return [
+            clean(material.name),
+            source,
+            clean(material.supplier),
+            clean(material.productNumber || material.productName),
+            rowIdentity
+        ].map(key).join("|");
+    }
+
+    const seenIds = new Set();
+    const seenImports = new Set();
     state.materials = [
         ...sharedRecords,
         ...manualRecords,
         ...spreadsheetRecords
-    ].filter((material, index, records) =>
-        records.findIndex((candidate) =>
-            candidate.id === material.id
-        ) === index
-    );
+    ].filter((material) => {
+        const id = clean(material.id);
+        const fingerprint = materialFingerprint(material);
+        if ((id && seenIds.has(id)) || seenImports.has(fingerprint)) {
+            return false;
+        }
+        if (id) seenIds.add(id);
+        seenImports.add(fingerprint);
+        return true;
+    });
 
 
     /*
