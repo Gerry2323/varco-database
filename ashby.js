@@ -391,12 +391,12 @@ const aliases = {
         "Elastic Modulus"
     ],
 
-    youngsModulusMin: ["Young Modulus Min (GPa)", "young_modulus_min_gpa", "Young's Modulus Min (GPa)", "Young’s Modulus Min (GPa)", "youngsModulusMin"],
-    youngsModulusMax: ["Young Modulus Max (GPa)", "young_modulus_max_gpa", "Young's Modulus Max (GPa)", "Young’s Modulus Max (GPa)", "youngsModulusMax"],
+    youngsModulusMin: ["Young Modulus Min (GPa)", "young_modulus_min_gpa", "Young's Modulus Min (GPa)"],
+    youngsModulusMax: ["Young Modulus Max (GPa)", "young_modulus_max_gpa", "Young's Modulus Max (GPa)"],
 
     yieldStrength: ["Yield Strength (MPa)", "Yield Stress (MPa)"],
-    yieldStrengthMin: ["Yield Strength Min (MPa)", "Yield Stress Min (MPa)", "yield_strength_min_mpa", "yield_stress_min_mpa", "Yield or Compressive Strength Min (MPa)"],
-    yieldStrengthMax: ["Yield Strength Max (MPa)", "Yield Stress Max (MPa)", "yield_strength_max_mpa", "yield_stress_max_mpa", "Yield or Compressive Strength Max (MPa)"],
+    yieldStrengthMin: ["Yield Stress Min (MPa)", "yield_stress_min_mpa", "Yield or Compressive Strength Min (MPa)"],
+    yieldStrengthMax: ["Yield Stress Max (MPa)", "yield_stress_max_mpa", "Yield or Compressive Strength Max (MPa)"],
 
     compressiveStrength: ["Compressive Strength (MPa)", "Compressive Strength"],
     compressiveStrengthMin: ["Compressive Strength Min (MPa)", "compressive_strength_min_mpa"],
@@ -431,10 +431,8 @@ const aliases = {
         "Melting Point",
         "Melt Point"
     ],
-    /* Only true melting-point columns belong here. A combined
-       "melting or softening" field must never be plotted as melting. */
-    meltingPointMin: ["Melting Point Min (°C)", "melting_point_min_c"],
-    meltingPointMax: ["Melting Point Max (°C)", "melting_point_max_c"],
+    meltingPointMin: ["Melting Point Min (°C)", "melting_point_min_c", "Melting or Softening Min (degC)"],
+    meltingPointMax: ["Melting Point Max (°C)", "melting_point_max_c", "Melting or Softening Max (degC)"],
 
     softeningTemperature: ["Softening Temperature (°C)", "Softening Temperature"],
     softeningTemperatureMin: ["Softening Temperature Min (°C)", "softening_temperature_min_c"],
@@ -475,34 +473,6 @@ const aliases = {
         "Manufacturer"
     ],
 
-    dataSourceGroup: [
-        "Data Source Group",
-        "data_source_group",
-        "Source Group",
-        "Record Type"
-    ],
-
-    parentMaterial: [
-        "Parent Material",
-        "parent_material",
-        "Comparable Material",
-        "Generic Material"
-    ],
-
-    productName: [
-        "Product Name",
-        "Supplier Product Name",
-        "Trade Name",
-        "Powder Name"
-    ],
-
-    productCode: [
-        "Product Code",
-        "Supplier Product Code",
-        "Part Number",
-        "SKU"
-    ],
-
     sourceTitle: [
         "Source Title",
         "Reference",
@@ -527,10 +497,12 @@ const aliases = {
 const state = {
     materials: [],
     points: [],
+    renderedPoints: [],
     selectedMaterial: null,
     view: null,
     isPanning: false,
-    panStart: null
+    panStart: null,
+    clusterSelection: null
 };
 
 
@@ -548,8 +520,7 @@ const controls = {
     yProperty: getElement("y-property"),
     yUnit: getElement("y-unit"),
     scale: getElement("axis-scale"),
-    family: getElement("family-filter"),
-    source: getElement("source-filter")
+    family: getElement("family-filter")
 };
 
 
@@ -702,6 +673,33 @@ function valueFromRow(headers, row, field) {
     return clean(row[columnIndex]);
 }
 
+/*
+   Normalize a material that was returned by Supabase. Imported spreadsheet
+   values are stored in material_data and varcoApi flattens them onto the
+   returned record, so their original column headings remain available as
+   object keys. Convert those headings to the canonical names used by the
+   chart in exactly the same way as a locally stored spreadsheet row.
+*/
+function normalizeSharedMaterial(material) {
+    const normalized = { ...material };
+    const keys = Object.keys(material || {});
+
+    Object.keys(aliases).forEach((field) => {
+        if (clean(normalized[field])) return;
+
+        const acceptedHeadings = (aliases[field] || []).map(comparable);
+        const matchingKey = keys.find((key) =>
+            acceptedHeadings.includes(comparable(key))
+        );
+
+        if (matchingKey) {
+            normalized[field] = clean(material[matchingKey]);
+        }
+    });
+
+    return normalized;
+}
+
 
 /* =========================================================
    10. LOAD CSV OR SPREADSHEET MATERIALS
@@ -757,48 +755,17 @@ async function spreadsheetMaterials() {
 
         files.forEach(
             (file) => {
-                /* Current uploads keep a combined material table in file.rows.
-                   Older/multi-sheet uploads may keep the table only inside
-                   workbookSheets or sheets, so accept all three shapes. */
-                let rows = Array.isArray(file.rows) ? file.rows : [];
-
-                if (rows.length < 2) {
-                    const storedSheets = Array.isArray(file.workbookSheets)
-                        ? file.workbookSheets
-                        : Array.isArray(file.sheets)
-                            ? file.sheets
-                            : [];
-
-                    const materialSheet = storedSheets.find((sheet) => {
-                        const sheetRows = Array.isArray(sheet?.rows) ? sheet.rows : [];
-                        if (!sheetRows.length) return false;
-                        return sheetRows.slice(0, 50).some((candidate) =>
-                            Array.isArray(candidate) && candidate.some((heading) =>
-                                (aliases.name || []).map(comparable).includes(comparable(heading))
-                            )
-                        );
-                    });
-
-                    rows = Array.isArray(materialSheet?.rows) ? materialSheet.rows : [];
-                }
+                const rows = Array.isArray(file.rows)
+                    ? file.rows
+                    : [];
 
                 if (rows.length < 2) {
                     return;
                 }
 
-                /* Locate the real header row instead of assuming row zero.
-                   This supports spreadsheets with a title/citation above the table. */
-                const headerRowIndex = rows.slice(0, 50).findIndex((candidate) =>
-                    Array.isArray(candidate) && candidate.some((heading) =>
-                        (aliases.name || []).map(comparable).includes(comparable(heading))
-                    )
-                );
+                const headers = rows[0];
 
-                if (headerRowIndex < 0) return;
-
-                const headers = rows[headerRowIndex];
-
-                rows.slice(headerRowIndex + 1).forEach(
+                rows.slice(1).forEach(
                     (row, index) => {
                         const name = valueFromRow(
                             headers,
@@ -836,16 +803,6 @@ async function spreadsheetMaterials() {
                                 }
                             }
                         );
-
-                        /* Preserve original columns too. This lets the chart read
-                           Cambridge underscore headers and future manufacturer
-                           columns even before a dedicated alias is added. */
-                        headers.forEach((header, columnIndex) => {
-                            const heading = clean(header);
-                            if (heading && material[heading] === undefined) {
-                                material[heading] = clean(row[columnIndex]);
-                            }
-                        });
 
                         if (!material.sourceTitle) {
                             material.sourceTitle = file.name;
@@ -963,15 +920,15 @@ function baseValue(material, propertyKey) {
     const property = properties[propertyKey];
     const rangeNames = rangeFieldNames[propertyKey];
     if (rangeNames) {
-        const low = numeric(readMaterialField(material, rangeNames[0]));
-        const high = numeric(readMaterialField(material, rangeNames[1]));
+        const low = numeric(material[rangeNames[0]]);
+        const high = numeric(material[rangeNames[1]]);
         if (low !== null && high !== null) return (low + high) / 2;
         if (low !== null) return low;
         if (high !== null) return high;
     }
 
     for (const field of property.fields) {
-        const value = numeric(readMaterialField(material, field));
+        const value = numeric(material[field]);
 
         if (value !== null) {
             return value;
@@ -979,24 +936,6 @@ function baseValue(material, propertyKey) {
     }
 
     return null;
-}
-
-/* Read standardized properties and raw imported CSV columns through the same
-   alias table. This keeps Density x Young's Modulus working whether a record
-   came from IndexedDB, the API, or a CSV that retained underscore headers. */
-function readMaterialField(material, field) {
-    const directValue = material?.[field];
-    if (clean(directValue)) return directValue;
-
-    const acceptedKeys = new Set(
-        [field, ...(aliases[field] || [])].map(comparable)
-    );
-
-    for (const [key, value] of Object.entries(material || {})) {
-        if (acceptedKeys.has(comparable(key)) && clean(value)) return value;
-    }
-
-    return "";
 }
 
 /* Return the reported min/max range in base units. A single reported
@@ -1014,8 +953,8 @@ function baseRange(material, propertyKey) {
         particleSizeAverage: ["particleSizeMin", "particleSizeMax"]
     };
     const names = rangeFieldNames[propertyKey];
-    let minimum = names ? numeric(readMaterialField(material, names[0])) : null;
-    let maximum = names ? numeric(readMaterialField(material, names[1])) : null;
+    let minimum = names ? numeric(material[names[0]]) : null;
+    let maximum = names ? numeric(material[names[1]]) : null;
 
     if (minimum === null && maximum === null) {
         const value = baseValue(material, propertyKey);
@@ -1098,25 +1037,6 @@ function populateFamilies() {
             controls.family.appendChild(option);
         }
     );
-}
-
-function sourceLabel(material) {
-    return clean(material.dataSourceGroup) ||
-        clean(material.supplier) ||
-        clean(material.sourceTitle) ||
-        "Unspecified source";
-}
-
-function populateSources() {
-    if (!controls.source) return;
-
-    const sources = [...new Set(state.materials.map(sourceLabel))].sort();
-    sources.forEach((source) => {
-        const option = document.createElement("option");
-        option.value = source;
-        option.textContent = source;
-        controls.source.appendChild(option);
-    });
 }
 
 
@@ -1258,9 +1178,6 @@ function preparePoints() {
     const familyFilter =
         controls.family.value;
 
-    const sourceFilter =
-        controls.source?.value || "";
-
     state.points = state.materials.flatMap(
         (material) => {
             const xRange = baseRange(
@@ -1294,15 +1211,10 @@ function preparePoints() {
                 familyFilter &&
                 family !== familyFilter;
 
-            const sourceDoesNotMatch =
-                sourceFilter &&
-                sourceLabel(material) !== sourceFilter;
-
             if (
                 missingProperty ||
                 !validForLogScale ||
-                familyDoesNotMatch ||
-                sourceDoesNotMatch
+                familyDoesNotMatch
             ) {
                 return [];
             }
@@ -1409,21 +1321,23 @@ function drawChart(rebuildView = true) {
         state.view = state.points.length
             ? {
                 x: paddedDomain(
-                    state.points.flatMap((point) => [point.xMin, point.xMax])
-                        .filter((value) => controls.scale.value !== "log" || value > 0)
-                        .map(transformed)
+                    state.points.map(
+                        (point) => transformed(point.x)
+                    )
                 ),
 
                 y: paddedDomain(
-                    state.points.flatMap((point) => [point.yMin, point.yMax])
-                        .filter((value) => controls.scale.value !== "log" || value > 0)
-                        .map(transformed)
+                    state.points.map(
+                        (point) => transformed(point.y)
+                    )
                 )
             }
             : null;
     }
 
     svg.replaceChildren();
+    state.renderedPoints = [];
+    state.clusterSelection = null;
 
     svg.setAttribute(
         "viewBox",
@@ -1760,15 +1674,25 @@ function drawChart(rebuildView = true) {
                     opacity: "0.18",
                     stroke: familyColors[point.family],
                     "stroke-width": "1.5",
-                    class: "material-range"
+                    class: "material-range",
+                    "pointer-events": "none"
                 }));
             }
+
+            const renderedPoint = {
+                point,
+                x: xToPixel(point.x),
+                y: yToPixel(point.y),
+                index: state.renderedPoints.length
+            };
+
+            state.renderedPoints.push(renderedPoint);
 
             const circle = svgElement(
                 "circle",
                 {
-                    cx: xToPixel(point.x),
-                    cy: yToPixel(point.y),
+                    cx: renderedPoint.x,
+                    cy: renderedPoint.y,
                     r: 7,
 
                     fill:
@@ -1788,11 +1712,15 @@ function drawChart(rebuildView = true) {
             circle.addEventListener(
                 "mouseenter",
                 (event) => {
+                    const cluster = nearbyRenderedPoints(event);
+                    const hovered = cluster[0] || renderedPoint;
+
                     showTooltip(
                         event,
-                        point,
+                        hovered.point,
                         xUnit,
-                        yUnit
+                        yUnit,
+                        cluster.length
                     );
                 }
             );
@@ -1829,10 +1757,22 @@ function drawChart(rebuildView = true) {
                 (event) => {
                     event.stopPropagation();
 
+                    const cluster = nearbyRenderedPoints(event);
+                    const selected = nextClusterPoint(cluster) || renderedPoint;
+
                     openMaterialPopover(
-                        point,
+                        selected.point,
                         xUnit,
                         yUnit
+                    );
+
+                    showTooltip(
+                        event,
+                        selected.point,
+                        xUnit,
+                        yUnit,
+                        cluster.length,
+                        cluster.indexOf(selected) + 1
                     );
                 }
             );
@@ -1873,7 +1813,9 @@ function showTooltip(
     event,
     point,
     xUnit,
-    yUnit
+    yUnit,
+    nearbyCount = 1,
+    nearbyPosition = 1
 ) {
     const tooltip =
         getElement("chart-tooltip");
@@ -1908,11 +1850,76 @@ function showTooltip(
         )}:
         ${formatRange(point.yMin, point.yMax)}
         ${escapeHtml(yUnit)}
+
+        ${nearbyCount > 1 ? `
+            <br><br>
+            <em>${nearbyPosition} of ${nearbyCount} nearby materials — click repeatedly to cycle</em>
+        ` : ""}
     `;
 
     tooltip.hidden = false;
 
     positionTooltip(event);
+}
+
+
+/*
+   Find all material points close to the pointer. SVG normally sends an
+   event only to the topmost circle, which makes coincident points
+   impossible to reach. Hit-testing the complete rendered point list lets
+   every material in a dense cluster remain selectable.
+*/
+function nearbyRenderedPoints(event, radius = 16) {
+    const svg = getElement("ashby-chart");
+    const matrix = svg.getScreenCTM();
+
+    if (!matrix) return [];
+
+    const pointer = new DOMPoint(event.clientX, event.clientY)
+        .matrixTransform(matrix.inverse());
+
+    return state.renderedPoints
+        .map((renderedPoint) => ({
+            ...renderedPoint,
+            distance: Math.hypot(
+                renderedPoint.x - pointer.x,
+                renderedPoint.y - pointer.y
+            )
+        }))
+        .filter((renderedPoint) => renderedPoint.distance <= radius)
+        .sort((first, second) =>
+            first.distance - second.distance || first.index - second.index
+        );
+}
+
+
+function clusterKey(cluster) {
+    return cluster
+        .map(({ point, index }) =>
+            clean(point.material.id) ||
+            clean(point.material.name) ||
+            `point-${index}`
+        )
+        .sort()
+        .join("|");
+}
+
+
+function nextClusterPoint(cluster) {
+    if (!cluster.length) return null;
+
+    const key = clusterKey(cluster);
+    const previous = state.clusterSelection;
+    const nextIndex = previous && previous.key === key
+        ? (previous.index + 1) % cluster.length
+        : 0;
+
+    state.clusterSelection = {
+        key,
+        index: nextIndex
+    };
+
+    return cluster[nextIndex];
 }
 
 function formatRange(minimum, maximum) {
@@ -2043,21 +2050,6 @@ function openMaterialPopover(
                     "Not reported"
                 )}
             </dd>
-        </div>
-
-        <div>
-            <dt>Data source</dt>
-            <dd>${escapeHtml(sourceLabel(point.material))}</dd>
-        </div>
-
-        <div>
-            <dt>Parent material</dt>
-            <dd>${escapeHtml(clean(point.material.parentMaterial) || "Not reported")}</dd>
-        </div>
-
-        <div>
-            <dt>Product</dt>
-            <dd>${escapeHtml(clean(point.material.productName) || clean(point.material.productCode) || "Not reported")}</dd>
         </div>
     `;
 
@@ -2424,7 +2416,10 @@ async function initialize() {
     );
 
     /*
-       Load both manually added and imported materials.
+       Prefer the shared Supabase catalog when it contains records. If the
+       local preview cannot reach Supabase, fall back to the browser catalog.
+       These sources are intentionally exclusive so the same import is never
+       displayed twice.
     */
 
     let sharedRecords = [];
@@ -2436,40 +2431,23 @@ async function initialize() {
         console.error("Shared materials could not be loaded.", error);
     }
 
-    const localRecords = [
-        ...manualMaterials(),
-        ...await spreadsheetMaterials()
-    ];
+    if (sharedRecords.length) {
+        state.materials = sharedRecords.map(normalizeSharedMaterial);
+    } else {
+        const manualRecords = manualMaterials();
+        const spreadsheetRecords = await spreadsheetMaterials();
 
-    /* Keep separate observations for each source and supplier product.
-       A local copy replaces only the same source-specific observation;
-       it never replaces another source that happens to use the same name. */
-    const merged = new Map();
-    const recordKey = (material, fallback) => {
-        const parts = [
-            material.name,
-            material.dataSourceGroup,
-            material.sourceTitle,
-            material.supplier,
-            material.productName,
-            material.productCode
-        ].map(comparable);
-
-        const hasSourceIdentity = parts.slice(1).some(Boolean);
-        return hasSourceIdentity ? parts.join("|") : `${parts[0]}|${fallback}`;
-    };
-    sharedRecords.forEach((material, index) => {
-        const key = recordKey(material, `shared-${material.id || index}`);
-        merged.set(key, material);
-    });
-    localRecords.forEach((material, index) => {
-        const key = recordKey(material, `local-${material.id || index}`);
-        merged.set(key, material);
-    });
-    state.materials = [...merged.values()];
+        state.materials = [
+            ...manualRecords,
+            ...spreadsheetRecords
+        ].filter((material, index, records) =>
+            records.findIndex((candidate) =>
+                candidate.id === material.id
+            ) === index
+        );
+    }
 
     populateFamilies();
-    populateSources();
 
     drawChart(true);
 }
@@ -2509,11 +2487,9 @@ controls.yProperty.addEventListener(
     controls.xUnit,
     controls.yUnit,
     controls.scale,
-    controls.family,
-    controls.source
+    controls.family
 ].forEach(
     (control) => {
-        if (!control) return;
         control.addEventListener(
             "change",
             () => {
@@ -2528,7 +2504,7 @@ controls.yProperty.addEventListener(
    25. SWAP X AND Y AXES
    ========================================================= */
 
-getElement("swap-axes")?.addEventListener(
+getElement("swap-axes").addEventListener(
     "click",
     () => {
         const oldXProperty =
@@ -2570,7 +2546,7 @@ getElement("swap-axes")?.addEventListener(
    26. BUTTON EVENTS
    ========================================================= */
 
-getElement("zoom-in")?.addEventListener(
+getElement("zoom-in").addEventListener(
     "click",
     () => {
         zoomView(0.75);
@@ -2578,7 +2554,7 @@ getElement("zoom-in")?.addEventListener(
 );
 
 
-getElement("zoom-out")?.addEventListener(
+getElement("zoom-out").addEventListener(
     "click",
     () => {
         zoomView(1.35);
@@ -2586,13 +2562,13 @@ getElement("zoom-out")?.addEventListener(
 );
 
 
-getElement("reset-view")?.addEventListener(
+getElement("reset-view").addEventListener(
     "click",
     resetView
 );
 
 
-getElement("close-popover")?.addEventListener(
+getElement("close-popover").addEventListener(
     "click",
     () => {
         getElement(
@@ -2602,7 +2578,7 @@ getElement("close-popover")?.addEventListener(
 );
 
 
-getElement("popover-compare")?.addEventListener(
+getElement("popover-compare").addEventListener(
     "click",
     toggleComparison
 );
@@ -2615,7 +2591,7 @@ getElement("popover-compare")?.addEventListener(
 const chart =
     getElement("ashby-chart");
 
-chart?.addEventListener(
+chart.addEventListener(
     "wheel",
     (event) => {
         event.preventDefault();
@@ -2660,22 +2636,22 @@ chart?.addEventListener(
    28. POINTER EVENTS FOR PANNING
    ========================================================= */
 
-chart?.addEventListener(
+chart.addEventListener(
     "pointerdown",
     startPan
 );
 
-chart?.addEventListener(
+chart.addEventListener(
     "pointermove",
     movePan
 );
 
-chart?.addEventListener(
+chart.addEventListener(
     "pointerup",
     stopPan
 );
 
-chart?.addEventListener(
+chart.addEventListener(
     "pointercancel",
     stopPan
 );
