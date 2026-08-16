@@ -64,6 +64,14 @@ function requireSuccess(result) {
     return result.data;
 }
 
+function batches(items, size = 100) {
+    const result = [];
+    for (let index = 0; index < items.length; index += size) {
+        result.push(items.slice(index, index + size));
+    }
+    return result;
+}
+
 window.varcoApi = {
     client: varcoSupabase,
 
@@ -195,11 +203,13 @@ window.varcoApi = {
                 "Cleanup stopped because a file record still exists. Delete it from the Uploaded Files page instead."
             );
         }
+        /* Delete by the already verified exact filename. This keeps the URL
+           short even when an orphaned import contains hundreds of rows. */
         if (preview.materials.length) {
             requireSuccess(await varcoSupabase
                 .from("materials")
                 .delete()
-                .in("id", preview.materials.map((material) => material.id)));
+                .eq("source_filename", preview.filename));
         }
         const verification = await this.inspectImportByFilename(preview.filename);
         if (verification.materials.length) {
@@ -300,14 +310,20 @@ window.varcoApi = {
         }
 
         if (materialIds.size) {
-            requireSuccess(await varcoSupabase
-                .from("materials")
-                .delete()
-                .in("id", Array.from(materialIds)));
-            const remaining = requireSuccess(await varcoSupabase
-                .from("materials")
-                .select("id")
-                .in("id", Array.from(materialIds)));
+            const ids = Array.from(materialIds);
+            for (const idBatch of batches(ids)) {
+                requireSuccess(await varcoSupabase
+                    .from("materials")
+                    .delete()
+                    .in("id", idBatch));
+            }
+            const remaining = [];
+            for (const idBatch of batches(ids)) {
+                remaining.push(...requireSuccess(await varcoSupabase
+                    .from("materials")
+                    .select("id")
+                    .in("id", idBatch)));
+            }
             if (remaining.length) {
                 throw new Error(
                     `Deletion stopped: ${remaining.length} linked material records remain in Supabase.`
