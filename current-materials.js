@@ -759,6 +759,17 @@ function sourceCell(material) {
     return cell;
 }
 
+function editCell(material) {
+    const cell = document.createElement("td");
+    const link = document.createElement("a");
+    link.className = "secondary-button catalog-edit-button";
+    link.href = "index.html?edit=" + encodeURIComponent(material.id) + "#material-form";
+    link.textContent = "Edit";
+    link.setAttribute("aria-label", "Edit " + (material.name || "material"));
+    cell.appendChild(link);
+    return cell;
+}
+
 
 /* =========================================================
    RENDER THE CURRENT TABLE PAGE
@@ -799,7 +810,7 @@ function render() {
         const cell = document.createElement("td");
 
         row.className = "empty-row";
-        cell.colSpan = 10;
+        cell.colSpan = 11;
 
         if (state.materials.length) {
             cell.textContent =
@@ -853,7 +864,10 @@ function render() {
                 ),
 
                 // Source
-                sourceCell(material)
+                sourceCell(material),
+
+                // Edit the existing Supabase record in the Dashboard form
+                editCell(material)
             );
 
             elements.body.appendChild(row);

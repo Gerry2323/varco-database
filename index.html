@@ -458,8 +458,8 @@
 
                             <input
                                 id="material-density"
-                                type="number"
-                                step="any"
+                                type="text"
+                                placeholder="Example: 7.05–7.25"
                             >
                         </div>
 
@@ -507,8 +507,8 @@
 
                             <input
                                 id="youngs-modulus"
-                                type="number"
-                                step="any"
+                                type="text"
+                                placeholder="Example: 165–180"
                             >
                         </div>
 
@@ -525,14 +525,37 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="yield-strength">
+                                Yield Strength (MPa)
+                            </label>
+
+                            <input
+                                id="yield-strength"
+                                type="text"
+                                placeholder="Example: 215–790"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="compressive-strength">
+                                Compressive Strength (MPa)
+                            </label>
+
+                            <input
+                                id="compressive-strength"
+                                type="text"
+                            >
+                        </div>
+
+                        <div class="form-group">
                             <label for="tensile-strength">
                                 Tensile Strength (MPa)
                             </label>
 
                             <input
                                 id="tensile-strength"
-                                type="number"
-                                step="any"
+                                type="text"
+                                placeholder="Example: 350–1000"
                             >
                         </div>
 
@@ -543,8 +566,8 @@
 
                             <input
                                 id="fracture-toughness"
-                                type="number"
-                                step="any"
+                                type="text"
+                                placeholder="Example: 22–54"
                             >
                         </div>
 
@@ -559,6 +582,17 @@
                     </summary>
 
                     <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="softening-temperature">
+                                Softening Temperature (°C)
+                            </label>
+
+                            <input
+                                id="softening-temperature"
+                                type="text"
+                            >
+                        </div>
 
                         <div class="form-group">
                             <label for="material-melting-point">
@@ -1056,7 +1090,7 @@
     
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="varco-api.js?v=20260809-1"></script>
+<script src="varco-api.js?v=20260809-4"></script>
 <script src="varco-schema.js?v=20260809-1"></script>
 <script src="script.js?v=20260810-1"></script>
 

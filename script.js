@@ -43,11 +43,14 @@ const fieldMap = {
     hardnessValue: "hardness-value",
     hardnessScaleLoad: "hardness-scale-load",
     youngsModulus: "youngs-modulus",
+    yieldStrength: "yield-strength",
+    compressiveStrength: "compressive-strength",
     poissonsRatio: "poissons-ratio",
     tensileStrength: "tensile-strength",
     fractureToughness: "fracture-toughness",
+    softeningTemperature: "softening-temperature",
     meltingPoint: "material-melting-point",
-    maximumServiceTemperature: "maximum-service-temperature",
+    maxServiceTemperature: "maximum-service-temperature",
     thermalConductivity: "thermal-conductivity",
     thermalExpansion: "thermal-expansion",
     electricalProperty: "electrical-property",
@@ -139,6 +142,10 @@ function normalizeMaterial(material) {
 
     if (!normalized.sourceType && normalized.source) {
         normalized.sourceType = normalized.source;
+    }
+
+    if (!normalized.maxServiceTemperature && normalized.maximumServiceTemperature) {
+        normalized.maxServiceTemperature = normalized.maximumServiceTemperature;
     }
 
     Object.keys(listDefinitions).forEach(function (key) {
@@ -731,6 +738,7 @@ materialForm.addEventListener(
         event.preventDefault();
 
         if (
+            !editingMaterialId &&
             listValues.manufacturingMethods.length === 0
         ) {
             manufacturingMethodError.hidden = false;
@@ -1017,22 +1025,6 @@ function createActionsCell(material) {
     const cell = document.createElement("td");
     cell.className = "actions-column";
 
-    if (material.importedFromCsv) {
-        const label =
-            document.createElement("span");
-
-        label.className = "csv-source-label";
-        label.textContent = "CSV";
-
-        label.title =
-            material.sourceFilename ||
-            "Imported CSV record";
-
-        cell.appendChild(label);
-
-        return cell;
-    }
-
     const menu = document.createElement("div");
     menu.className = "actions-menu";
 
@@ -1115,10 +1107,13 @@ function createActionsCell(material) {
         }
     );
 
-    dropdown.append(
-        editButton,
-        deleteButton
-    );
+    dropdown.append(editButton);
+
+    /* Spreadsheet rows remain owned by their uploaded file. They can be
+       edited, but file-level deletion must stay on the CSV Files page. */
+    if (material.origin !== "csv" && !material.importedFromCsv) {
+        dropdown.append(deleteButton);
+    }
 
     menu.append(
         menuButton,
@@ -1290,6 +1285,16 @@ async function initializeMaterialsPage() {
 
     renderMaterials();
     updateDashboard();
+
+    const requestedEditId = new URLSearchParams(window.location.search).get("edit");
+    if (requestedEditId) {
+        const requestedMaterial = materials.find((material) => material.id === requestedEditId);
+        if (requestedMaterial) {
+            openMaterialForm(requestedMaterial);
+        } else {
+            window.alert("The selected material could not be found.");
+        }
+    }
 }
 
 initializeMaterialsPage();

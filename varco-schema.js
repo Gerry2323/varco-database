@@ -32,6 +32,7 @@
         particleSizeMax: ["particle_size_max_um", "Particle Size Max (µm)", "Maximum Particle Size"],
         particleSizeAverage: ["particle_size_average_um", "Particle Size Average (µm)", "Average Particle Size", "D50"],
         particleSizeReported: ["particle_size_range_reported", "Particle Size Range Reported"],
+        particleSizeDirect: ["particleSize", "Particle Size"],
         sprayProcesses: ["spray_processes", "Recommended Spray Processes"],
         applicationsCharacteristics: ["applications_and_reported_characteristics", "Applications and Reported Characteristics"],
         maxServiceTemperature: ["max_service_temp_c", "Maximum Service Temperature (°C)"],
@@ -39,11 +40,14 @@
         densityMin: ["density_min_g_cm3", "Density Min (g/cm³)"],
         densityMax: ["density_max_g_cm3", "Density Max (g/cm³)"],
         densityReported: ["density_value_reported", "Density Value Reported", "Density (g/cm³)"],
+        densityDirect: ["density", "Material Density"],
         densityType: ["density_type", "Density Type"],
         meltingPointMin: ["melting_point_min_c", "Melting Point Min (°C)"],
         meltingPointMax: ["melting_point_max_c", "Melting Point Max (°C)"],
         meltingPointReported: ["melting_point_reported", "Melting Point Reported", "Melting Point (°C)"],
+        meltingPointDirect: ["meltingPoint", "Melting Point"],
         hardnessValue: ["hardness_value", "Hardness Value", "Hardness"],
+        hardnessDirect: ["hardness"],
         hardnessScaleLoad: ["hardness_scale_load", "Hardness Scale and Load"],
         classification: ["classification", "Classification"],
         color: ["color", "Color"],
@@ -58,16 +62,22 @@
         youngsModulusMin: ["young_modulus_min_gpa", "Young's Modulus Min (GPa)"],
         youngsModulusMax: ["young_modulus_max_gpa", "Young's Modulus Max (GPa)"],
         youngsModulusReported: ["young_modulus_gpa", "Young's Modulus (GPa)", "Youngs Modulus", "Elastic Modulus"],
+        yieldStrengthReported: ["yieldStrength", "Yield Strength (MPa)", "Yield Strength"],
         yieldStressMin: ["yield_stress_min_mpa", "Yield Stress Min (MPa)"],
         yieldStressMax: ["yield_stress_max_mpa", "Yield Stress Max (MPa)"],
         compressiveStrengthMin: ["compressive_strength_min_mpa", "Compressive Strength Min (MPa)"],
         compressiveStrengthMax: ["compressive_strength_max_mpa", "Compressive Strength Max (MPa)"],
+        compressiveStrengthReported: ["compressiveStrength", "Compressive Strength (MPa)", "Compressive Strength"],
         tensileStrengthMin: ["tensile_strength_min_mpa", "Tensile Strength Min (MPa)"],
         tensileStrengthMax: ["tensile_strength_max_mpa", "Tensile Strength Max (MPa)"],
+        tensileStrengthReported: ["tensileStrength", "Tensile Strength (MPa)", "Tensile Strength"],
         fractureToughnessMin: ["fracture_toughness_min_mpa_sqrt_m", "Fracture Toughness Min (MPa·m^0.5)"],
         fractureToughnessMax: ["fracture_toughness_max_mpa_sqrt_m", "Fracture Toughness Max (MPa·m^0.5)"],
+        fractureToughnessReported: ["fractureToughness", "Fracture Toughness (MPa·m^0.5)", "Fracture Toughness"],
         softeningTemperatureMin: ["softening_temperature_min_c", "Softening Temperature Min (°C)"],
         softeningTemperatureMax: ["softening_temperature_max_c", "Softening Temperature Max (°C)"],
+        softeningTemperatureReported: ["softeningTemperature", "Softening Temperature (°C)", "Softening Temperature"],
+        maximumServiceTemperatureReported: ["maxServiceTemperature", "maximumServiceTemperature", "Maximum Service Temperature (°C)"],
         abbreviation: ["abbreviation", "Abbreviation"],
         applications: ["applications", "Applications", "Intended Applications"],
         flammabilityRating: ["flammability_rating", "Flammability Rating"],
@@ -112,21 +122,22 @@
             if (clean(header) && value) material.rawProperties[String(header).trim()] = value;
         });
 
-        material.density = material.densityReported || range(material.densityMin, material.densityMax, "g/cm³");
-        material.meltingPoint = material.meltingPointReported || range(material.meltingPointMin, material.meltingPointMax, "°C");
+        material.density = material.densityReported || material.densityDirect || range(material.densityMin, material.densityMax, "g/cm³");
+        material.meltingPoint = material.meltingPointReported || material.meltingPointDirect || range(material.meltingPointMin, material.meltingPointMax, "°C");
         material.youngsModulus = material.youngsModulusReported || range(material.youngsModulusMin, material.youngsModulusMax, "GPa");
-        material.hardness = [material.hardnessValue, material.hardnessScaleLoad]
+        material.hardness = material.hardnessDirect || [material.hardnessValue, material.hardnessScaleLoad]
             .filter(Boolean).join(" ");
-        material.particleSize = material.particleSizeReported || range(material.particleSizeMin, material.particleSizeMax, "µm");
+        material.particleSize = material.particleSizeReported || material.particleSizeDirect || range(material.particleSizeMin, material.particleSizeMax, "µm");
         material.yieldStrengthMin = material.yieldStressMin;
         material.yieldStrengthMax = material.yieldStressMax;
-        material.yieldStrength = range(material.yieldStressMin, material.yieldStressMax, "MPa");
-        material.compressiveStrength = range(material.compressiveStrengthMin, material.compressiveStrengthMax, "MPa");
-        material.tensileStrength = range(material.tensileStrengthMin, material.tensileStrengthMax, "MPa");
-        material.fractureToughness = range(material.fractureToughnessMin, material.fractureToughnessMax, "MPa·m^0.5");
-        material.softeningTemperature = range(material.softeningTemperatureMin, material.softeningTemperatureMax, "°C");
+        material.yieldStrength = material.yieldStrengthReported || range(material.yieldStressMin, material.yieldStressMax, "MPa");
+        material.compressiveStrength = material.compressiveStrengthReported || range(material.compressiveStrengthMin, material.compressiveStrengthMax, "MPa");
+        material.tensileStrength = material.tensileStrengthReported || range(material.tensileStrengthMin, material.tensileStrengthMax, "MPa");
+        material.fractureToughness = material.fractureToughnessReported || range(material.fractureToughnessMin, material.fractureToughnessMax, "MPa·m^0.5");
+        material.softeningTemperature = material.softeningTemperatureReported || range(material.softeningTemperatureMin, material.softeningTemperatureMax, "°C");
+        material.maxServiceTemperature = material.maximumServiceTemperatureReported || material.maxServiceTemperature;
         material.maxServiceTemperatureDisplay = clean(material.maxServiceTemperature)
-            ? `${clean(material.maxServiceTemperature)} °C`
+            ? `${clean(material.maxServiceTemperature)}${/°|c$/i.test(clean(material.maxServiceTemperature)) ? "" : " °C"}`
             : "";
         material.environmentalResistance = [
             ["Fresh water", material.freshWaterRating],

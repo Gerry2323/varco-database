@@ -1629,8 +1629,8 @@ function configureComparisonButton(material) {
 /* =========================================================
    EDIT BUTTON
 
-   Spreadsheet imports are treated as reference records. Manual
-   records can return to the Current Materials page for editing.
+   All Supabase records use the Dashboard's existing edit form. Imported
+   records keep their sourceFileId, so file-level deletion remains linked.
    ========================================================= */
 
 function configureEditButton(material) {
@@ -1638,24 +1638,13 @@ function configureEditButton(material) {
         return;
     }
 
-    if (material.origin === "csv") {
-        elements.editButton.textContent =
-            "Spreadsheet Record";
-
-        elements.editButton.disabled = true;
-
-        elements.editButton.title =
-            "Edit the uploaded spreadsheet to change this record.";
-
-        return;
-    }
-
     elements.editButton.addEventListener(
         "click",
         () => {
             const editUrl =
-                "current-materials.html?edit=" +
-                encodeURIComponent(material.id);
+                "index.html?edit=" +
+                encodeURIComponent(material.id) +
+                "#material-form";
 
             window.location.href = editUrl;
         }
