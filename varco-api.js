@@ -15,8 +15,14 @@ const varcoSupabase = window.supabase.createClient(
 );
 
 function materialFromRow(row) {
+    const stored = row.material_data || {};
+    const normalized = window.VarcoSchema?.objectToMaterial
+        ? window.VarcoSchema.objectToMaterial(stored)
+        : stored;
+    const storedOrigin = stored.origin || "shared";
     return {
-        ...(row.material_data || {}),
+        ...stored,
+        ...normalized,
         id: row.id,
         name: row.material_name,
         category: row.category,
@@ -34,7 +40,7 @@ function materialFromRow(row) {
         documentLink: row.document_link,
         dateAdded: row.created_at,
         dateUpdated: row.updated_at,
-        origin: row.material_data?.origin || "shared"
+        origin: storedOrigin === "shared-csv" ? "csv" : storedOrigin
     };
 }
 

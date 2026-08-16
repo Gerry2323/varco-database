@@ -27,9 +27,10 @@
         compositionBasis: ["composition_basis", "Composition Basis"],
         feedstockForm: ["feedstock_form", "Feedstock Form"],
         manufacturingMethods: ["manufacturing_method", "Manufacturing Method", "Manufacturing Methods"],
-        morphology: ["morphology", "Morphology", "Morphologies"],
-        particleSizeMin: ["particle_size_min_um", "Particle Size Min (µm)"],
-        particleSizeMax: ["particle_size_max_um", "Particle Size Max (µm)"],
+        morphology: ["morphology", "particle_morphology", "Morphology", "Morphologies", "Particle Morphology"],
+        particleSizeMin: ["particle_size_min_um", "Particle Size Min (µm)", "Minimum Particle Size"],
+        particleSizeMax: ["particle_size_max_um", "Particle Size Max (µm)", "Maximum Particle Size"],
+        particleSizeAverage: ["particle_size_average_um", "Particle Size Average (µm)", "Average Particle Size", "D50"],
         particleSizeReported: ["particle_size_range_reported", "Particle Size Range Reported"],
         sprayProcesses: ["spray_processes", "Recommended Spray Processes"],
         applicationsCharacteristics: ["applications_and_reported_characteristics", "Applications and Reported Characteristics"],
@@ -42,7 +43,7 @@
         meltingPointMin: ["melting_point_min_c", "Melting Point Min (°C)"],
         meltingPointMax: ["melting_point_max_c", "Melting Point Max (°C)"],
         meltingPointReported: ["melting_point_reported", "Melting Point Reported", "Melting Point (°C)"],
-        hardnessValue: ["hardness_value", "Hardness Value"],
+        hardnessValue: ["hardness_value", "Hardness Value", "Hardness"],
         hardnessScaleLoad: ["hardness_scale_load", "Hardness Scale and Load"],
         classification: ["classification", "Classification"],
         color: ["color", "Color"],
@@ -56,6 +57,7 @@
         notes: ["data_quality_note", "Data Quality Note", "Notes"],
         youngsModulusMin: ["young_modulus_min_gpa", "Young's Modulus Min (GPa)"],
         youngsModulusMax: ["young_modulus_max_gpa", "Young's Modulus Max (GPa)"],
+        youngsModulusReported: ["young_modulus_gpa", "Young's Modulus (GPa)", "Youngs Modulus", "Elastic Modulus"],
         yieldStressMin: ["yield_stress_min_mpa", "Yield Stress Min (MPa)"],
         yieldStressMax: ["yield_stress_max_mpa", "Yield Stress Max (MPa)"],
         compressiveStrengthMin: ["compressive_strength_min_mpa", "Compressive Strength Min (MPa)"],
@@ -100,7 +102,7 @@
         const indexes = new Map(headers.map((header, index) => [key(header), index]));
         const material = {};
         Object.entries(fields).forEach(([field, headings]) => {
-            const heading = headings.find((candidate) => indexes.has(key(candidate)));
+            const heading = [field, ...headings].find((candidate) => indexes.has(key(candidate)));
             material[field] = heading ? clean(row[indexes.get(key(heading))]) : "";
         });
 
@@ -112,7 +114,8 @@
 
         material.density = material.densityReported || range(material.densityMin, material.densityMax, "g/cm³");
         material.meltingPoint = material.meltingPointReported || range(material.meltingPointMin, material.meltingPointMax, "°C");
-        material.youngsModulus = range(material.youngsModulusMin, material.youngsModulusMax, "GPa");
+        material.youngsModulus = material.youngsModulusReported || range(material.youngsModulusMin, material.youngsModulusMax, "GPa");
+        material.hardness = material.hardnessValue;
         material.tensileStrength = range(material.tensileStrengthMin, material.tensileStrengthMax, "MPa");
         material.fractureToughness = range(material.fractureToughnessMin, material.fractureToughnessMax, "MPa·m^0.5");
         if (!material.category) material.category = material.classification;
@@ -120,5 +123,16 @@
         return material;
     }
 
-    window.VarcoSchema = { clean, key, fields, range, rowToMaterial };
+    function objectToMaterial(record) {
+        const source = record && typeof record === "object" ? record : {};
+        const headers = Object.keys(source);
+        const normalized = rowToMaterial(headers, headers.map((header) => source[header]));
+        normalized.rawProperties = {
+            ...(source.rawProperties || {}),
+            ...normalized.rawProperties
+        };
+        return { ...source, ...normalized };
+    }
+
+    window.VarcoSchema = { clean, key, fields, range, rowToMaterial, objectToMaterial };
 })();

@@ -441,9 +441,13 @@ function sharedMaterialFromRow(headers, row, filename) {
     };
 
     const reportedSourceFilename = valueFor("Source Filename", "");
+    const normalizedRecord = window.VarcoSchema
+        ? window.VarcoSchema.rowToMaterial(headers, row)
+        : {};
 
     return {
         ...completeRecord,
+        ...normalizedRecord,
         name: valueFor("Material Name", "Unnamed material"),
         category: valueFor("Category"),
         composition: valueFor("Composition"),
