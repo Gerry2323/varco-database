@@ -99,16 +99,17 @@
           </label>
 
           <label>
-            Data source
-            <select id="source-filter">
-              <option value="">All sources (overlay)</option>
+            Chart view
+            <select id="chart-view-mode">
+              <option value="single">Single property chart</option>
+              <option value="overview">All Database Overview</option>
             </select>
           </label>
         </div>
       </section>
 
       <!-- Interactive chart and legend -->
-      <section class="chart-card" aria-labelledby="chart-title">
+      <section id="single-chart-card" class="chart-card" aria-labelledby="chart-title">
         <div class="chart-toolbar">
           <div>
             <h3 id="chart-title">Young's Modulus vs. Density</h3>
@@ -145,6 +146,40 @@
         <div id="family-legend" class="family-legend" aria-label="Material family colors"></div>
       </section>
 
+      <section id="database-overview" class="overview-section" hidden aria-labelledby="overview-title">
+        <div class="overview-heading">
+          <div>
+            <p class="ashby-eyebrow">All database materials</p>
+            <h3 id="overview-title">Coordinated Property Overview</h3>
+            <p>Records appear in every panel for which they contain the required reported properties.</p>
+          </div>
+          <div class="overview-counts" aria-live="polite">
+            <strong id="overview-covered-count">0</strong>
+            <span>represented in at least one panel</span>
+          </div>
+        </div>
+
+        <div class="overview-grid">
+          <article class="overview-card">
+            <h4>Melting Point vs. Density</h4>
+            <p id="density-overview-status">0 records</p>
+            <svg id="density-overview-chart" class="overview-chart" role="img" aria-label="Melting point versus density overview"></svg>
+          </article>
+          <article class="overview-card">
+            <h4>Melting Point vs. Particle-Size Range</h4>
+            <p id="particle-overview-status">0 records</p>
+            <svg id="particle-overview-chart" class="overview-chart" role="img" aria-label="Melting point versus particle-size range overview"></svg>
+            <p class="overview-caption">Horizontal spans show reported minimum–maximum particle size; markers show range midpoints, not D50.</p>
+          </article>
+        </div>
+
+        <details class="overview-missing-card">
+          <summary><span id="overview-missing-count">0</span> records cannot enter either panel</summary>
+          <p>These records lack melting point, density, or particle-size range values. Open a record to review or edit its data.</p>
+          <div id="overview-missing-list" class="overview-missing-list"></div>
+        </details>
+      </section>
+
       <!-- Opens when a plotted point is clicked -->
       <aside id="material-popover" class="material-popover" hidden>
         <button id="close-popover" class="popover-close" type="button" aria-label="Close material information">×</button>
@@ -170,7 +205,8 @@
 
     <footer class="site-footer"><p>VARCO Materials Database</p></footer>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="varco-api.js?v=20260809-1"></script>
-    <script src="ashby.js?v=20260810-4"></script>
+    <script src="varco-api.js?v=20260809-4"></script>
+    <script src="varco-schema.js?v=20260809-1"></script>
+    <script src="ashby.js?v=20260810-1"></script>
 </body>
 </html>

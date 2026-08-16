@@ -100,24 +100,6 @@ const properties = {
         }
     },
 
-    yieldStrength: {
-        label: "Yield Strength",
-        fields: ["yieldStrength"],
-        units: {
-            mpa: { label: "MPa", fromBase(value) { return value; } },
-            gpa: { label: "GPa", fromBase(value) { return value / 1000; } }
-        }
-    },
-
-    compressiveStrength: {
-        label: "Compressive Strength",
-        fields: ["compressiveStrength"],
-        units: {
-            mpa: { label: "MPa", fromBase(value) { return value; } },
-            gpa: { label: "GPa", fromBase(value) { return value / 1000; } }
-        }
-    },
-
     tensileStrength: {
         label: "Tensile Strength",
 
@@ -229,26 +211,6 @@ const properties = {
                     return value * 9 / 5 + 32;
                 }
             }
-        }
-    },
-
-    softeningTemperature: {
-        label: "Softening Temperature",
-        fields: ["softeningTemperature"],
-        units: {
-            c: { label: "°C", fromBase(value) { return value; } },
-            k: { label: "K", fromBase(value) { return value + 273.15; } },
-            f: { label: "°F", fromBase(value) { return value * 9 / 5 + 32; } }
-        }
-    },
-
-    maxServiceTemperature: {
-        label: "Maximum Service Temperature",
-        fields: ["maxServiceTemperature"],
-        units: {
-            c: { label: "°C", fromBase(value) { return value; } },
-            k: { label: "K", fromBase(value) { return value + 273.15; } },
-            f: { label: "°F", fromBase(value) { return value * 9 / 5 + 32; } }
         }
     },
 
@@ -372,12 +334,8 @@ const aliases = {
     density: [
         "Density (g/cm³)",
         "Density",
-        "Material Density",
-        "Density Value Reported"
+        "Material Density"
     ],
-
-    densityMin: ["Density Min (g/cm³)", "density_min_g_cm3", "Density Min (Mg/m3)"],
-    densityMax: ["Density Max (g/cm³)", "density_max_g_cm3", "Density Max (Mg/m3)"],
 
     apparentDensity: [
         "Apparent Density (g/cm³)",
@@ -391,30 +349,15 @@ const aliases = {
         "Elastic Modulus"
     ],
 
-    youngsModulusMin: ["Young Modulus Min (GPa)", "young_modulus_min_gpa", "Young's Modulus Min (GPa)"],
-    youngsModulusMax: ["Young Modulus Max (GPa)", "young_modulus_max_gpa", "Young's Modulus Max (GPa)"],
-
-    yieldStrength: ["Yield Strength (MPa)", "Yield Stress (MPa)"],
-    yieldStrengthMin: ["Yield Stress Min (MPa)", "yield_stress_min_mpa", "Yield or Compressive Strength Min (MPa)"],
-    yieldStrengthMax: ["Yield Stress Max (MPa)", "yield_stress_max_mpa", "Yield or Compressive Strength Max (MPa)"],
-
-    compressiveStrength: ["Compressive Strength (MPa)", "Compressive Strength"],
-    compressiveStrengthMin: ["Compressive Strength Min (MPa)", "compressive_strength_min_mpa"],
-    compressiveStrengthMax: ["Compressive Strength Max (MPa)", "compressive_strength_max_mpa"],
-
     tensileStrength: [
         "Tensile Strength (MPa)",
         "Tensile Strength"
     ],
-    tensileStrengthMin: ["Tensile Strength Min (MPa)", "tensile_strength_min_mpa"],
-    tensileStrengthMax: ["Tensile Strength Max (MPa)", "tensile_strength_max_mpa"],
 
     fractureToughness: [
         "Fracture Toughness (MPa·m^0.5)",
         "Fracture Toughness"
     ],
-    fractureToughnessMin: ["Fracture Toughness Min (MPa sqrt(m))", "fracture_toughness_min_mpa_sqrt_m"],
-    fractureToughnessMax: ["Fracture Toughness Max (MPa sqrt(m))", "fracture_toughness_max_mpa_sqrt_m"],
 
     thermalConductivity: [
         "Thermal Conductivity (W/m·K)",
@@ -431,13 +374,6 @@ const aliases = {
         "Melting Point",
         "Melt Point"
     ],
-    meltingPointMin: ["Melting Point Min (°C)", "melting_point_min_c", "Melting or Softening Min (degC)"],
-    meltingPointMax: ["Melting Point Max (°C)", "melting_point_max_c", "Melting or Softening Max (degC)"],
-
-    softeningTemperature: ["Softening Temperature (°C)", "Softening Temperature"],
-    softeningTemperatureMin: ["Softening Temperature Min (°C)", "softening_temperature_min_c"],
-    softeningTemperatureMax: ["Softening Temperature Max (°C)", "softening_temperature_max_c"],
-    maxServiceTemperature: ["Max Service Temp (°C)", "max_service_temp_c", "Maximum Service Temperature (°C)"],
 
     porosity: [
         "Porosity (%)",
@@ -459,8 +395,6 @@ const aliases = {
         "Particle Size Average",
         "D50"
     ],
-    particleSizeMin: ["Particle Size Min (µm)", "particle_size_min_um", "Minimum Particle Size"],
-    particleSizeMax: ["Particle Size Max (µm)", "particle_size_max_um", "Maximum Particle Size"],
 
     composition: [
         "Composition as Reported",
@@ -497,12 +431,10 @@ const aliases = {
 const state = {
     materials: [],
     points: [],
-    renderedPoints: [],
     selectedMaterial: null,
     view: null,
     isPanning: false,
-    panStart: null,
-    clusterSelection: null
+    panStart: null
 };
 
 
@@ -520,7 +452,8 @@ const controls = {
     yProperty: getElement("y-property"),
     yUnit: getElement("y-unit"),
     scale: getElement("axis-scale"),
-    family: getElement("family-filter")
+    family: getElement("family-filter"),
+    viewMode: getElement("chart-view-mode")
 };
 
 
@@ -671,33 +604,6 @@ function valueFromRow(headers, row, field) {
     }
 
     return clean(row[columnIndex]);
-}
-
-/*
-   Normalize a material that was returned by Supabase. Imported spreadsheet
-   values are stored in material_data and varcoApi flattens them onto the
-   returned record, so their original column headings remain available as
-   object keys. Convert those headings to the canonical names used by the
-   chart in exactly the same way as a locally stored spreadsheet row.
-*/
-function normalizeSharedMaterial(material) {
-    const normalized = { ...material };
-    const keys = Object.keys(material || {});
-
-    Object.keys(aliases).forEach((field) => {
-        if (clean(normalized[field])) return;
-
-        const acceptedHeadings = (aliases[field] || []).map(comparable);
-        const matchingKey = keys.find((key) =>
-            acceptedHeadings.includes(comparable(key))
-        );
-
-        if (matchingKey) {
-            normalized[field] = clean(material[matchingKey]);
-        }
-    });
-
-    return normalized;
 }
 
 
@@ -905,19 +811,15 @@ function materialFamily(material) {
 */
 
 function baseValue(material, propertyKey) {
+    const property = properties[propertyKey];
+
     const rangeFieldNames = {
         density: ["densityMin", "densityMax"],
         youngsModulus: ["youngsModulusMin", "youngsModulusMax"],
-        yieldStrength: ["yieldStrengthMin", "yieldStrengthMax"],
-        compressiveStrength: ["compressiveStrengthMin", "compressiveStrengthMax"],
         tensileStrength: ["tensileStrengthMin", "tensileStrengthMax"],
         fractureToughness: ["fractureToughnessMin", "fractureToughnessMax"],
-        meltingPoint: ["meltingPointMin", "meltingPointMax"],
-        softeningTemperature: ["softeningTemperatureMin", "softeningTemperatureMax"],
-        particleSizeAverage: ["particleSizeMin", "particleSizeMax"]
+        meltingPoint: ["meltingPointMin", "meltingPointMax"]
     };
-
-    const property = properties[propertyKey];
     const rangeNames = rangeFieldNames[propertyKey];
     if (rangeNames) {
         const low = numeric(material[rangeNames[0]]);
@@ -936,34 +838,6 @@ function baseValue(material, propertyKey) {
     }
 
     return null;
-}
-
-/* Return the reported min/max range in base units. A single reported
-   value becomes a zero-width range so older/manual records still plot. */
-function baseRange(material, propertyKey) {
-    const rangeFieldNames = {
-        density: ["densityMin", "densityMax"],
-        youngsModulus: ["youngsModulusMin", "youngsModulusMax"],
-        yieldStrength: ["yieldStrengthMin", "yieldStrengthMax"],
-        compressiveStrength: ["compressiveStrengthMin", "compressiveStrengthMax"],
-        tensileStrength: ["tensileStrengthMin", "tensileStrengthMax"],
-        fractureToughness: ["fractureToughnessMin", "fractureToughnessMax"],
-        meltingPoint: ["meltingPointMin", "meltingPointMax"],
-        softeningTemperature: ["softeningTemperatureMin", "softeningTemperatureMax"],
-        particleSizeAverage: ["particleSizeMin", "particleSizeMax"]
-    };
-    const names = rangeFieldNames[propertyKey];
-    let minimum = names ? numeric(material[names[0]]) : null;
-    let maximum = names ? numeric(material[names[1]]) : null;
-
-    if (minimum === null && maximum === null) {
-        const value = baseValue(material, propertyKey);
-        return value === null ? null : { minimum: value, maximum: value, center: value };
-    }
-    if (minimum === null) minimum = maximum;
-    if (maximum === null) maximum = minimum;
-    if (minimum > maximum) [minimum, maximum] = [maximum, minimum];
-    return { minimum, maximum, center: (minimum + maximum) / 2 };
 }
 
 
@@ -1180,18 +1054,15 @@ function preparePoints() {
 
     state.points = state.materials.flatMap(
         (material) => {
-            const xRange = baseRange(
+            const xBase = baseValue(
                 material,
                 xPropertyKey
             );
 
-            const yRange = baseRange(
+            const yBase = baseValue(
                 material,
                 yPropertyKey
             );
-
-            const xBase = xRange?.center ?? null;
-            const yBase = yRange?.center ?? null;
 
             const family =
                 materialFamily(material);
@@ -1234,11 +1105,7 @@ function preparePoints() {
                         yBase,
                         yPropertyKey,
                         controls.yUnit.value
-                    ),
-                    xMin: displayedValue(xRange.minimum, xPropertyKey, controls.xUnit.value),
-                    xMax: displayedValue(xRange.maximum, xPropertyKey, controls.xUnit.value),
-                    yMin: displayedValue(yRange.minimum, yPropertyKey, controls.yUnit.value),
-                    yMax: displayedValue(yRange.maximum, yPropertyKey, controls.yUnit.value)
+                    )
                 }
             ];
         }
@@ -1259,15 +1126,15 @@ function resetView() {
 
     state.view = {
         x: paddedDomain(
-            state.points.flatMap((point) => [point.xMin, point.xMax])
-                .filter((value) => controls.scale.value !== "log" || value > 0)
-                .map(transformed)
+            state.points.map(
+                (point) => transformed(point.x)
+            )
         ),
 
         y: paddedDomain(
-            state.points.flatMap((point) => [point.yMin, point.yMax])
-                .filter((value) => controls.scale.value !== "log" || value > 0)
-                .map(transformed)
+            state.points.map(
+                (point) => transformed(point.y)
+            )
         )
     };
 
@@ -1336,8 +1203,6 @@ function drawChart(rebuildView = true) {
     }
 
     svg.replaceChildren();
-    state.renderedPoints = [];
-    state.clusterSelection = null;
 
     svg.setAttribute(
         "viewBox",
@@ -1654,45 +1519,11 @@ function drawChart(rebuildView = true) {
                 clean(point.material.name) ||
                 "Unnamed material";
 
-            const hasDrawableRange =
-                (point.xMin !== point.xMax || point.yMin !== point.yMax) &&
-                (controls.scale.value !== "log" ||
-                    (point.xMin > 0 && point.yMin > 0));
-
-            if (hasDrawableRange) {
-                const left = Math.min(xToPixel(point.xMin), xToPixel(point.xMax));
-                const right = Math.max(xToPixel(point.xMin), xToPixel(point.xMax));
-                const top = Math.min(yToPixel(point.yMin), yToPixel(point.yMax));
-                const bottom = Math.max(yToPixel(point.yMin), yToPixel(point.yMax));
-                pointGroup.appendChild(svgElement("rect", {
-                    x: left,
-                    y: top,
-                    width: Math.max(3, right - left),
-                    height: Math.max(3, bottom - top),
-                    rx: 3,
-                    fill: familyColors[point.family],
-                    opacity: "0.18",
-                    stroke: familyColors[point.family],
-                    "stroke-width": "1.5",
-                    class: "material-range",
-                    "pointer-events": "none"
-                }));
-            }
-
-            const renderedPoint = {
-                point,
-                x: xToPixel(point.x),
-                y: yToPixel(point.y),
-                index: state.renderedPoints.length
-            };
-
-            state.renderedPoints.push(renderedPoint);
-
             const circle = svgElement(
                 "circle",
                 {
-                    cx: renderedPoint.x,
-                    cy: renderedPoint.y,
+                    cx: xToPixel(point.x),
+                    cy: yToPixel(point.y),
                     r: 7,
 
                     fill:
@@ -1712,15 +1543,11 @@ function drawChart(rebuildView = true) {
             circle.addEventListener(
                 "mouseenter",
                 (event) => {
-                    const cluster = nearbyRenderedPoints(event);
-                    const hovered = cluster[0] || renderedPoint;
-
                     showTooltip(
                         event,
-                        hovered.point,
+                        point,
                         xUnit,
-                        yUnit,
-                        cluster.length
+                        yUnit
                     );
                 }
             );
@@ -1757,22 +1584,10 @@ function drawChart(rebuildView = true) {
                 (event) => {
                     event.stopPropagation();
 
-                    const cluster = nearbyRenderedPoints(event);
-                    const selected = nextClusterPoint(cluster) || renderedPoint;
-
                     openMaterialPopover(
-                        selected.point,
+                        point,
                         xUnit,
                         yUnit
-                    );
-
-                    showTooltip(
-                        event,
-                        selected.point,
-                        xUnit,
-                        yUnit,
-                        cluster.length,
-                        cluster.indexOf(selected) + 1
                     );
                 }
             );
@@ -1813,9 +1628,7 @@ function showTooltip(
     event,
     point,
     xUnit,
-    yUnit,
-    nearbyCount = 1,
-    nearbyPosition = 1
+    yUnit
 ) {
     const tooltip =
         getElement("chart-tooltip");
@@ -1838,7 +1651,7 @@ function showTooltip(
                 controls.xProperty.value
             ].label
         )}:
-        ${formatRange(point.xMin, point.xMax)}
+        ${formatNumber(point.x)}
         ${escapeHtml(xUnit)}
 
         <br>
@@ -1848,83 +1661,13 @@ function showTooltip(
                 controls.yProperty.value
             ].label
         )}:
-        ${formatRange(point.yMin, point.yMax)}
+        ${formatNumber(point.y)}
         ${escapeHtml(yUnit)}
-
-        ${nearbyCount > 1 ? `
-            <br><br>
-            <em>${nearbyPosition} of ${nearbyCount} nearby materials — click repeatedly to cycle</em>
-        ` : ""}
     `;
 
     tooltip.hidden = false;
 
     positionTooltip(event);
-}
-
-
-/*
-   Find all material points close to the pointer. SVG normally sends an
-   event only to the topmost circle, which makes coincident points
-   impossible to reach. Hit-testing the complete rendered point list lets
-   every material in a dense cluster remain selectable.
-*/
-function nearbyRenderedPoints(event, radius = 16) {
-    const svg = getElement("ashby-chart");
-    const matrix = svg.getScreenCTM();
-
-    if (!matrix) return [];
-
-    const pointer = new DOMPoint(event.clientX, event.clientY)
-        .matrixTransform(matrix.inverse());
-
-    return state.renderedPoints
-        .map((renderedPoint) => ({
-            ...renderedPoint,
-            distance: Math.hypot(
-                renderedPoint.x - pointer.x,
-                renderedPoint.y - pointer.y
-            )
-        }))
-        .filter((renderedPoint) => renderedPoint.distance <= radius)
-        .sort((first, second) =>
-            first.distance - second.distance || first.index - second.index
-        );
-}
-
-
-function clusterKey(cluster) {
-    return cluster
-        .map(({ point, index }) =>
-            clean(point.material.id) ||
-            clean(point.material.name) ||
-            `point-${index}`
-        )
-        .sort()
-        .join("|");
-}
-
-
-function nextClusterPoint(cluster) {
-    if (!cluster.length) return null;
-
-    const key = clusterKey(cluster);
-    const previous = state.clusterSelection;
-    const nextIndex = previous && previous.key === key
-        ? (previous.index + 1) % cluster.length
-        : 0;
-
-    state.clusterSelection = {
-        key,
-        index: nextIndex
-    };
-
-    return cluster[nextIndex];
-}
-
-function formatRange(minimum, maximum) {
-    if (minimum === maximum) return formatNumber(minimum);
-    return `${formatNumber(minimum)}–${formatNumber(maximum)}`;
 }
 
 
@@ -2010,7 +1753,7 @@ function openMaterialPopover(
             </dt>
 
             <dd>
-                ${formatRange(point.xMin, point.xMax)}
+                ${formatNumber(point.x)}
                 ${escapeHtml(xUnit)}
             </dd>
         </div>
@@ -2025,7 +1768,7 @@ function openMaterialPopover(
             </dt>
 
             <dd>
-                ${formatRange(point.yMin, point.yMax)}
+                ${formatNumber(point.y)}
                 ${escapeHtml(yUnit)}
             </dd>
         </div>
@@ -2377,7 +2120,180 @@ function stopPan() {
 
 
 /* =========================================================
-   23. INITIALIZE THE PAGE
+   23. ALL-DATABASE OVERVIEW
+   ========================================================= */
+
+function overviewSvgElement(name, attributes = {}) {
+    const element = document.createElementNS(SVG_NAMESPACE, name);
+    Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+    return element;
+}
+
+function overviewScale(value, minimum, maximum, start, end) {
+    const safeMin = Math.max(minimum, Number.MIN_VALUE);
+    const safeMax = Math.max(maximum, safeMin * 1.0001);
+    const transformedValue = Math.log10(Math.max(value, Number.MIN_VALUE));
+    const transformedMin = Math.log10(safeMin);
+    const transformedMax = Math.log10(safeMax);
+    return start + (transformedValue - transformedMin) / (transformedMax - transformedMin) * (end - start);
+}
+
+function overviewDomain(values) {
+    let minimum = Math.min(...values);
+    let maximum = Math.max(...values);
+    if (minimum === maximum) {
+        minimum *= 0.85;
+        maximum *= 1.15;
+    }
+    const logMin = Math.log10(Math.max(minimum, Number.MIN_VALUE));
+    const logMax = Math.log10(Math.max(maximum, Number.MIN_VALUE));
+    const padding = Math.max((logMax - logMin) * 0.08, 0.03);
+    return [10 ** (logMin - padding), 10 ** (logMax + padding)];
+}
+
+function overviewTicks(domain, count = 5) {
+    const [minimum, maximum] = domain;
+    const low = Math.log10(minimum);
+    const high = Math.log10(maximum);
+    return Array.from({ length: count }, (_, index) => 10 ** (low + (high - low) * index / (count - 1)));
+}
+
+function drawOverviewPanel({ svgId, statusId, xKind, xLabel }) {
+    const svg = getElement(svgId);
+    const familyFilter = controls.family.value;
+    const points = [];
+
+    state.materials.forEach((material) => {
+        const meltingPoint = baseValue(material, "meltingPoint");
+        const family = materialFamily(material);
+        if (meltingPoint === null || meltingPoint <= 0 || (familyFilter && family !== familyFilter)) return;
+
+        if (xKind === "density") {
+            const density = baseValue(material, "density");
+            if (density !== null && density > 0) {
+                points.push({ material, family, x: density, low: density, high: density, y: meltingPoint });
+            }
+            return;
+        }
+
+        const minimum = numeric(material.particleSizeMin);
+        const maximum = numeric(material.particleSizeMax);
+        const average = numeric(material.particleSizeAverage);
+        if (minimum !== null || maximum !== null) {
+            const low = minimum ?? maximum;
+            const high = maximum ?? minimum;
+            if (low > 0 && high > 0) points.push({ material, family, x: (low + high) / 2, low, high, y: meltingPoint });
+        } else if (average !== null && average > 0) {
+            points.push({ material, family, x: average, low: average, high: average, y: meltingPoint });
+        }
+    });
+
+    getElement(statusId).textContent = `${points.length} record${points.length === 1 ? "" : "s"} contain both required properties.`;
+    svg.replaceChildren();
+    svg.setAttribute("viewBox", "0 0 640 360");
+    if (!points.length) {
+        const message = overviewSvgElement("text", { x: 320, y: 180, "text-anchor": "middle", class: "overview-label" });
+        message.textContent = "No records contain both required properties.";
+        svg.appendChild(message);
+        return new Set();
+    }
+
+    const left = 68, right = 620, top = 24, bottom = 310;
+    const xDomain = overviewDomain(points.flatMap((point) => [point.low, point.high]));
+    const yDomain = overviewDomain(points.map((point) => point.y));
+
+    overviewTicks(xDomain).forEach((tick) => {
+        const x = overviewScale(tick, xDomain[0], xDomain[1], left, right);
+        svg.appendChild(overviewSvgElement("line", { x1: x, y1: top, x2: x, y2: bottom, class: "overview-grid-line" }));
+        const label = overviewSvgElement("text", { x, y: bottom + 20, "text-anchor": "middle", class: "overview-label" });
+        label.textContent = formatNumber(tick);
+        svg.appendChild(label);
+    });
+    overviewTicks(yDomain).forEach((tick) => {
+        const y = overviewScale(tick, yDomain[0], yDomain[1], bottom, top);
+        svg.appendChild(overviewSvgElement("line", { x1: left, y1: y, x2: right, y2: y, class: "overview-grid-line" }));
+        const label = overviewSvgElement("text", { x: left - 10, y: y + 4, "text-anchor": "end", class: "overview-label" });
+        label.textContent = formatNumber(tick);
+        svg.appendChild(label);
+    });
+    svg.appendChild(overviewSvgElement("line", { x1: left, y1: bottom, x2: right, y2: bottom, class: "overview-axis" }));
+    svg.appendChild(overviewSvgElement("line", { x1: left, y1: top, x2: left, y2: bottom, class: "overview-axis" }));
+
+    const xAxisLabel = overviewSvgElement("text", { x: (left + right) / 2, y: 352, "text-anchor": "middle", class: "overview-label" });
+    xAxisLabel.textContent = xLabel;
+    svg.appendChild(xAxisLabel);
+    const yAxisLabel = overviewSvgElement("text", { x: 15, y: (top + bottom) / 2, transform: `rotate(-90 15 ${(top + bottom) / 2})`, "text-anchor": "middle", class: "overview-label" });
+    yAxisLabel.textContent = "Melting Point (°C)";
+    svg.appendChild(yAxisLabel);
+
+    points.forEach((point) => {
+        const y = overviewScale(point.y, yDomain[0], yDomain[1], bottom, top);
+        const lowX = overviewScale(point.low, xDomain[0], xDomain[1], left, right);
+        const highX = overviewScale(point.high, xDomain[0], xDomain[1], left, right);
+        const x = overviewScale(point.x, xDomain[0], xDomain[1], left, right);
+        const color = familyColors[point.family] || familyColors.Other;
+        if (point.low !== point.high) {
+            svg.appendChild(overviewSvgElement("line", { x1: lowX, y1: y, x2: highX, y2: y, class: "overview-range", stroke: color }));
+        }
+        const circle = overviewSvgElement("circle", { cx: x, cy: y, r: 5.5, fill: color, class: "overview-point", tabindex: 0 });
+        const title = overviewSvgElement("title");
+        title.textContent = `${point.material.name || "Unnamed material"}\n${xLabel}: ${formatNumber(point.low)}${point.low !== point.high ? `–${formatNumber(point.high)}` : ""}\nMelting Point: ${formatNumber(point.y)} °C`;
+        circle.appendChild(title);
+        circle.addEventListener("click", () => {
+            window.location.href = `material-details.html?id=${encodeURIComponent(point.material.id)}`;
+        });
+        svg.appendChild(circle);
+    });
+
+    return new Set(points.map((point) => point.material.id));
+}
+
+function renderDatabaseOverview() {
+    const densityIds = drawOverviewPanel({
+        svgId: "density-overview-chart",
+        statusId: "density-overview-status",
+        xKind: "density",
+        xLabel: "Density (g/cm³)"
+    });
+    const particleIds = drawOverviewPanel({
+        svgId: "particle-overview-chart",
+        statusId: "particle-overview-status",
+        xKind: "particle",
+        xLabel: "Particle Size (µm)"
+    });
+    const covered = new Set([...densityIds, ...particleIds]);
+    const visibleMaterials = controls.family.value
+        ? state.materials.filter((material) => materialFamily(material) === controls.family.value)
+        : state.materials;
+    const missing = visibleMaterials.filter((material) => !covered.has(material.id));
+    getElement("overview-covered-count").textContent = covered.size;
+    getElement("overview-missing-count").textContent = missing.length;
+    const list = getElement("overview-missing-list");
+    list.replaceChildren();
+    missing.forEach((material) => {
+        const link = document.createElement("a");
+        link.href = `material-details.html?id=${encodeURIComponent(material.id)}`;
+        link.textContent = material.name || "Unnamed material";
+        list.appendChild(link);
+    });
+}
+
+function updateChartViewMode() {
+    const overviewMode = controls.viewMode.value === "overview";
+    getElement("single-chart-card").hidden = overviewMode;
+    getElement("database-overview").hidden = !overviewMode;
+    controls.xProperty.disabled = overviewMode;
+    controls.xUnit.disabled = overviewMode;
+    controls.yProperty.disabled = overviewMode;
+    controls.yUnit.disabled = overviewMode;
+    controls.scale.disabled = overviewMode;
+    getElement("swap-axes").disabled = overviewMode;
+    if (overviewMode) renderDatabaseOverview();
+    else drawChart(true);
+}
+
+/* =========================================================
+   24. INITIALIZE THE PAGE
    ========================================================= */
 
 async function initialize() {
@@ -2416,10 +2332,7 @@ async function initialize() {
     );
 
     /*
-       Prefer the shared Supabase catalog when it contains records. If the
-       local preview cannot reach Supabase, fall back to the browser catalog.
-       These sources are intentionally exclusive so the same import is never
-       displayed twice.
+       Load both manually added and imported materials.
     */
 
     let sharedRecords = [];
@@ -2431,30 +2344,19 @@ async function initialize() {
         console.error("Shared materials could not be loaded.", error);
     }
 
-    if (sharedRecords.length) {
-        state.materials = sharedRecords.map(normalizeSharedMaterial);
-    } else {
-        const manualRecords = manualMaterials();
-        const spreadsheetRecords = await spreadsheetMaterials();
-
-        state.materials = [
-            ...manualRecords,
-            ...spreadsheetRecords
-        ].filter((material, index, records) =>
-            records.findIndex((candidate) =>
-                candidate.id === material.id
-            ) === index
-        );
-    }
+    // Supabase is the only material-record source so chart counts and points
+    // remain identical for signed-in and public users on every device.
+    state.materials = sharedRecords;
 
     populateFamilies();
 
     drawChart(true);
+    updateChartViewMode();
 }
 
 
 /* =========================================================
-   24. FILTER AND UNIT EVENTS
+   25. FILTER AND UNIT EVENTS
    ========================================================= */
 
 controls.xProperty.addEventListener(
@@ -2486,8 +2388,7 @@ controls.yProperty.addEventListener(
 [
     controls.xUnit,
     controls.yUnit,
-    controls.scale,
-    controls.family
+    controls.scale
 ].forEach(
     (control) => {
         control.addEventListener(
@@ -2497,6 +2398,22 @@ controls.yProperty.addEventListener(
             }
         );
     }
+);
+
+controls.family.addEventListener(
+    "change",
+    () => {
+        if (controls.viewMode.value === "overview") {
+            renderDatabaseOverview();
+        } else {
+            drawChart(true);
+        }
+    }
+);
+
+controls.viewMode.addEventListener(
+    "change",
+    updateChartViewMode
 );
 
 
