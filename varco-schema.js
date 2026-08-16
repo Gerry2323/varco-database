@@ -115,9 +115,28 @@
         material.density = material.densityReported || range(material.densityMin, material.densityMax, "g/cm³");
         material.meltingPoint = material.meltingPointReported || range(material.meltingPointMin, material.meltingPointMax, "°C");
         material.youngsModulus = material.youngsModulusReported || range(material.youngsModulusMin, material.youngsModulusMax, "GPa");
-        material.hardness = material.hardnessValue;
+        material.hardness = [material.hardnessValue, material.hardnessScaleLoad]
+            .filter(Boolean).join(" ");
+        material.particleSize = material.particleSizeReported || range(material.particleSizeMin, material.particleSizeMax, "µm");
+        material.yieldStrengthMin = material.yieldStressMin;
+        material.yieldStrengthMax = material.yieldStressMax;
+        material.yieldStrength = range(material.yieldStressMin, material.yieldStressMax, "MPa");
+        material.compressiveStrength = range(material.compressiveStrengthMin, material.compressiveStrengthMax, "MPa");
         material.tensileStrength = range(material.tensileStrengthMin, material.tensileStrengthMax, "MPa");
         material.fractureToughness = range(material.fractureToughnessMin, material.fractureToughnessMax, "MPa·m^0.5");
+        material.softeningTemperature = range(material.softeningTemperatureMin, material.softeningTemperatureMax, "°C");
+        material.maxServiceTemperatureDisplay = clean(material.maxServiceTemperature)
+            ? `${clean(material.maxServiceTemperature)} °C`
+            : "";
+        material.environmentalResistance = [
+            ["Fresh water", material.freshWaterRating],
+            ["Salt water", material.saltWaterRating],
+            ["Sunlight/UV", material.sunlightUvRating],
+            ["Flammability", material.flammabilityRating],
+            ["Wear resistance", material.wearResistanceRating]
+        ].filter(([, value]) => clean(value))
+            .map(([label, value]) => `${label}: ${value}`)
+            .join("; ");
         if (!material.category) material.category = material.classification;
         if (!material.sourceFilename) material.sourceFilename = material.sourceTitle;
         return material;

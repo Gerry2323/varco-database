@@ -1698,35 +1698,9 @@ async function initializeMaterialDetails() {
         console.error("Shared materials could not be loaded:", error);
     }
 
-    /*
-       Material links created by Current Materials can point to records stored
-       locally in localStorage or IndexedDB. Load those records before looking
-       up the selected ID. Shared/Supabase records are added when available,
-       but they must not replace the browser's uploaded CSV catalog.
-    */
-    const manualRecords = manualMaterials();
-    const spreadsheetRecords = await spreadsheetMaterials();
-    const materialMap = new Map();
-
-    /*
-       Add shared records first, then browser-local records.
-
-       A CSV row and its older shared/Supabase copy can have the same ID.
-       Map.set() keeps the last copy. Local CSV rows contain the complete
-       Cambridge min/max columns, so they must win over an older shared copy
-       that may contain only tensile strength or a few summary properties.
-    */
-    [
-        ...sharedRecords,
-        ...manualRecords,
-        ...spreadsheetRecords
-    ].forEach((material) => {
-        if (material && clean(material.id)) {
-            materialMap.set(material.id, material);
-        }
-    });
-
-    const allMaterials = Array.from(materialMap.values());
+    /* Supabase is the single material-record source. varcoApi normalizes the
+       original spreadsheet headings before records reach this page. */
+    const allMaterials = sharedRecords;
 
     let selectedMaterial =
         allMaterials.find(
