@@ -572,6 +572,11 @@ function renderCards() {
     const links = document.createElement("div");
     links.className = "card-links";
     links.appendChild(detailLink(material, "Full details"));
+    const editLink = document.createElement("a");
+    editLink.href = `index.html?edit=${encodeURIComponent(material.id)}#material-form`;
+    editLink.textContent = "Edit";
+    editLink.setAttribute("aria-label", `Edit ${material.name || "material"}`);
+    links.appendChild(editLink);
     const source = sourceLink(material);
     if (source) links.appendChild(source);
     body.append(checkLabel, title, category, facts, links);

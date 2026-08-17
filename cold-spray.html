@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Compare estimated cold-spray critical velocity ranges for VARCO materials.">
+  <title>Cold Spray Velocity Tool | VARCO Materials Database</title>
+  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="cold-spray.css?v=20260816-1">
+</head>
+<body>
+  <header class="main-header">
+    <p class="project-label">NASA Materials Research Project</p>
+    <h1>VARCO Materials Database</h1>
+    <p class="subtitle">Lunar regolith, ceramic coatings, substrates, and test data</p>
+  </header>
+
+  <nav class="navigation" aria-label="Main navigation">
+    <a href="index.html#dashboard">Dashboard</a>
+    <a href="current-materials.html">Current Materials</a>
+    <a href="csv-files.html">CSV Files</a>
+    <a href="materials-selector.html">Material Selector</a>
+    <a href="ashby.html">Ashby Charts</a>
+    <a href="cold-spray.html" aria-current="page">Cold Spray Tool</a>
+    <a href="about.html">About</a>
+  </nav>
+
+  <main class="cs-main">
+    <section class="cs-hero">
+      <div>
+        <p class="cs-eyebrow">Preliminary process screening</p>
+        <h2>Cold Spray Critical Velocity Comparator</h2>
+        <p>Select two or three materials, review the reported inputs, and compare estimated critical-velocity bands and their shared candidate deposition window.</p>
+      </div>
+      <div class="cs-badge"><strong id="loaded-count">0</strong><span>database materials</span></div>
+    </section>
+
+    <section class="cs-warning" role="note">
+      <strong>Screening estimate—not a qualified spray parameter.</strong>
+      <p>The semi-empirical calculation uses bulk-property data. Powder strength, particle temperature and size, substrate, nozzle, gas, pressure, and morphology can shift the real threshold. Confirm with diagnostics and deposition-efficiency testing.</p>
+      <p><strong>Applicability:</strong> the generalized Schmidt model is intended primarily for plastically deformable metallic feedstocks. Do not treat a result for a pure ceramic, regolith, or brittle standalone powder as evidence that conventional cold-spray bonding will occur; those systems require a validated metal matrix, binder, or a different deposition model.</p>
+    </section>
+
+    <section class="cs-controls" aria-labelledby="setup-title">
+      <div class="section-heading">
+        <div><h3 id="setup-title">Calculation setup</h3><p>Reported database values load automatically. You may enter a documented override.</p></div>
+        <div class="model-controls">
+          <label>Assessment mode<select id="assessment-mode"><option value="base">Material-only Schmidt formula</option><option value="process">Include process and substrate evidence</option></select></label>
+          <label>Mechanical factor F₁<input id="factor-f1" type="number" min="0" step="0.05" value="1"></label>
+          <label>Thermal factor F₂<input id="factor-f2" type="number" min="0" step="0.05" value="0.25"></label>
+          <label>Uncertainty band
+            <select id="uncertainty">
+              <option value="0.10">±10%</option><option value="0.15" selected>±15%</option><option value="0.20">±20%</option><option value="0.25">±25%</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div id="process-options" class="process-options" hidden>
+        <label>Standoff distance (mm)<input id="standoff-distance" type="number" min="0" step="any" placeholder="Example: 30"></label>
+        <label>Substrate material<select id="substrate-select"><option value="">Select substrate</option><option value="manual">Other / manually documented</option></select></label>
+        <p>Enter each powder’s measured or simulated impact velocity at this distance below. Standoff distance is recorded for traceability; it is not converted to velocity without a validated gas/nozzle model.</p>
+      </div>
+      <div id="material-slots" class="material-slots"></div>
+      <div class="control-actions">
+        <button id="calculate-button" class="primary-action" type="button">Calculate comparison</button>
+        <button id="reset-button" class="secondary-action" type="button">Reset</button>
+      </div>
+      <p id="tool-message" class="tool-message" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="results" class="cs-results" hidden aria-labelledby="results-title">
+      <div class="section-heading">
+        <div><h3 id="results-title">Critical velocity comparison</h3><p>Threshold bands include the selected uncertainty allowance.</p></div>
+        <div class="shared-window"><span>Shared candidate window</span><strong id="shared-window-value">—</strong></div>
+      </div>
+      <p id="process-summary" class="process-summary" hidden></p>
+      <div id="velocity-chart" class="velocity-chart" aria-label="Critical velocity range comparison"></div>
+      <div id="result-cards" class="result-cards"></div>
+      <p class="result-note">The lower limit is the estimated bonding threshold. The displayed upper screening boundary uses approximately 3× critical velocity as an erosion-risk indicator; it is not a machine limit or guaranteed safe operating speed.</p>
+    </section>
+
+    <section class="cs-method">
+      <h3>Model and required inputs</h3>
+      <p>The tool uses the Schmidt-type semi-empirical relationship with default calibration factors F₁ = 1 and F₂ = 0.25:</p>
+      <p class="equation">v<sub>crit</sub> = k₁√{4F₁[σ(1 − (T<sub>p</sub>−T<sub>R</sub>)/(T<sub>m</sub>−T<sub>R</sub>))]/ρ + F₂c<sub>p</sub>(T<sub>m</sub>−T<sub>p</sub>)}</p>
+      <p class="equation">k₁ = (d<sub>p</sub>/25 µm)<sup>−0.1</sup>, &nbsp; T<sub>R</sub> = 20 °C</p>
+      <ul>
+        <li>ρ: density; σ<sub>UTS</sub>: ultimate tensile strength; c<sub>p</sub>: specific heat.</li>
+        <li>T<sub>m</sub>: melting temperature; T<sub>p</sub>: estimated particle temperature immediately before impact.</li>
+        <li>d<sub>p</sub>: D50 or the midpoint of a reported particle-size range. The 25 µm reference diameter and exponent 0.1 follow the generalized model.</li>
+        <li>Default F₁ = 1 and F₂ = 0.25 are generalized screening values; replace F₁ only when your powder has been experimentally calibrated.</li>
+        <li>Optional process mode compares the adjusted critical threshold with a measured or simulated impact velocity at the entered standoff distance. A substrate factor must come from testing or a validated particle–substrate model; 1.0 means no adjustment.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer"><p>VARCO Materials Database</p></footer>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="varco-api.js?v=20260809-4"></script>
+  <script src="varco-schema.js?v=20260809-1"></script>
+  <script src="cold-spray.js?v=20260816-1"></script>
+</body>
+</html>

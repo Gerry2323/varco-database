@@ -7,17 +7,26 @@
     <title>CSV Files | VARCO Materials Database</title>
 
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="csv-files.css?v=20260810-1">
+    <link rel="stylesheet" href="csv-files.css?v=20260806-1">
 </head>
 
 <body>
+    <header class="main-header">
+        <p class="project-label">NASA Materials Research Project</p>
+        <h1>CSV &amp; Spreadsheet Files</h1>
+        <p class="subtitle">
+            Upload, review, edit, rename, and manage tabular research data
+        </p>
+    </header>
+
     <nav class="navigation" aria-label="Main navigation">
         <a href="index.html#dashboard">Dashboard</a>
         <a href="current-materials.html">Current Materials</a>
         <a href="csv-files.html" aria-current="page">CSV Files</a>
         <a href="materials-selector.html">Material Selector</a>
         <a href="ashby.html">Ashby Chart</a>
-        <a href="index.html#about">About</a>
+        <a href="cold-spray.html">Cold Spray Tool</a>
+        <a href="about.html">About</a>
     </nav>
 
     <main>
@@ -191,15 +200,10 @@
         <p>VARCO Materials Database</p>
     </footer>
 
-    <script
-        defer
-        src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
-    ></script>
-    <script
-        defer
-        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
-    ></script>
-    <script defer src="varco-api.js?v=20260809-4"></script>
-    <script defer src="csv-files.js?v=20260810-3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="varco-api.js?v=20260809-4"></script>
+    <script src="varco-schema.js?v=20260809-1"></script>
+    <script src="csv-files.js?v=20260809-rollback-1"></script>
 </body>
 </html>
